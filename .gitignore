@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+src/frontend/node_modules/
+src/backend/vendor/
+
+# Next.js Build
+src/frontend/.next/
+src/frontend/out/
+
+# Environment files
+.env
+.env.*
+!.env.example
+src/backend/.env
+!src/backend/.env.example
+src/frontend/.env.local
+
+# Laravel storage & cache
+src/backend/storage/*.key
+src/backend/storage/framework/cache/data/*
+src/backend/storage/framework/sessions/*
+src/backend/storage/framework/views/*
+src/backend/storage/logs/*
+!src/backend/storage/framework/cache/data/.gitignore
+!src/backend/storage/framework/sessions/.gitignore
+!src/backend/storage/framework/views/.gitignore
+!src/backend/storage/logs/.gitignore
+
+# SQLite databases
+src/backend/database/*.sqlite
+src/backend/database/*.sqlite-journal
+!src/backend/database/.gitignore
+
+# System files
+.DS_Store
+Thumbs.db
+*.log
