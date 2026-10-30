@@ -31,6 +31,10 @@ export default function CustomDomainsView() {
   // Step-by-Step Guide Modal
   const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
 
+  // Delete Domain Confirmation Modal
+  const [domainToDelete, setDomainToDelete] = useState<CustomDomain | null>(null);
+  const [deletingDomain, setDeletingDomain] = useState(false);
+
   // Validation States & Modals:
   // 'none' | 'validating' | 'failed_checklist' | 'failed_dialog' | 'success' | 'revalidate_prompt'
   const [modalState, setModalState] = useState<
@@ -86,13 +90,17 @@ export default function CustomDomainsView() {
     }
   };
 
-  const handleDeleteDomain = async (id: number) => {
-    if (!confirm("Are you sure you want to remove this domain?")) return;
+  const confirmDeleteDomain = async () => {
+    if (!domainToDelete) return;
+    setDeletingDomain(true);
     try {
-      await api.deleteDomain(id);
+      await api.deleteDomain(domainToDelete.id);
+      setDomainToDelete(null);
       await fetchDomains();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete domain");
+    } finally {
+      setDeletingDomain(false);
     }
   };
 
@@ -437,7 +445,7 @@ export default function CustomDomainsView() {
                               {/* Delete Button */}
                               <button
                                 type="button"
-                                onClick={() => handleDeleteDomain(dom.id)}
+                                onClick={() => setDomainToDelete(dom)}
                                 className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-rose-200/70 transition cursor-pointer"
                                 title="Delete Domain"
                               >
@@ -830,6 +838,57 @@ export default function CustomDomainsView() {
               >
                 <Plus className="w-4 h-4 stroke-[2.5]" />
                 <span>Ready to Add Domain</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: CUSTOM DELETE DOMAIN CONFIRMATION */}
+      {/* ======================================================== */}
+      {domainToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-7 relative shadow-2xl text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center mx-auto shadow-2xs">
+              <Trash2 className="w-6 h-6 stroke-[2.2]" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                Remove Custom Domain
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed px-2">
+                Are you sure you want to remove <strong className="text-slate-800">{domainToDelete.domain}</strong>? Any active routes or tunnel connections for this domain will be disconnected.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setDomainToDelete(null)}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDeleteDomain}
+                disabled={deletingDomain}
+                className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {deletingDomain ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Removing...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Remove Domain</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

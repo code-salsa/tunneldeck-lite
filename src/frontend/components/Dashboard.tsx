@@ -89,6 +89,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [creatingTunnel, setCreatingTunnel] = useState(false);
   const [creatingDomain, setCreatingDomain] = useState(false);
 
+  // Custom Delete Tunnel Modal
+  const [tunnelToDelete, setTunnelToDelete] = useState<Tunnel | null>(null);
+  const [deletingTunnel, setDeletingTunnel] = useState(false);
+
   // Form states
   const [tunnelForm, setTunnelForm] = useState({
     name: "",
@@ -253,13 +257,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     }
   };
 
-  const handleDeleteTunnel = async (id: number) => {
-    if (!confirm("Are you sure you want to stop and delete this tunnel?")) return;
+  const confirmDeleteTunnel = async () => {
+    if (!tunnelToDelete) return;
+    setDeletingTunnel(true);
     try {
-      await api.deleteTunnel(id);
+      await api.deleteTunnel(tunnelToDelete.id);
+      setTunnelToDelete(null);
       await fetchData();
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to delete tunnel");
+    } finally {
+      setDeletingTunnel(false);
     }
   };
 
@@ -299,16 +307,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       alert(err instanceof Error ? err.message : "Failed to add domain");
     } finally {
       setCreatingDomain(false);
-    }
-  };
-
-  const handleDeleteDomain = async (id: number) => {
-    if (!confirm("Remove this domain configuration?")) return;
-    try {
-      await api.deleteDomain(id);
-      await fetchData();
-    } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to delete domain");
     }
   };
 
@@ -852,7 +850,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                             )}
 
                             <button
-                              onClick={() => handleDeleteTunnel(tunnel.id)}
+                              onClick={() => setTunnelToDelete(tunnel)}
                               disabled={isOperating}
                               className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer disabled:opacity-50"
                               title="Delete Tunnel"
@@ -1221,6 +1219,57 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: CUSTOM DELETE TUNNEL CONFIRMATION */}
+      {/* ======================================================== */}
+      {tunnelToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-md p-7 relative shadow-2xl text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center mx-auto shadow-2xs">
+              <Trash2 className="w-6 h-6 stroke-[2.2]" />
+            </div>
+
+            <div className="space-y-1.5">
+              <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                Delete Tunnel
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed px-2">
+                Are you sure you want to stop and delete tunnel <strong className="text-slate-800">{tunnelToDelete.name}</strong> (Port {tunnelToDelete.port})? The local process and public URL will be stopped immediately.
+              </p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setTunnelToDelete(null)}
+                className="w-full py-2.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDeleteTunnel}
+                disabled={deletingTunnel}
+                className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20 transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                {deletingTunnel ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Tunnel</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
