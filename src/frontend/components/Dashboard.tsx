@@ -36,6 +36,10 @@ import {
   PlusCircle,
   Pencil,
   Clipboard,
+  ChevronDown,
+  GitFork,
+  Link2,
+  Network,
 } from "lucide-react";
 import { api, Activity, CustomDomain, Tunnel, TunnelMetrics, User } from "@/lib/api";
 import CustomDomainsView from "./CustomDomainsView";
@@ -100,6 +104,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [editingTunnel, setEditingTunnel] = useState<Tunnel | null>(null);
   const [editForm, setEditForm] = useState({ name: "", port: 3000 });
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Start Tunnel Routing Modal (Screenshots 1-4)
+  const [routingModalTunnel, setRoutingModalTunnel] = useState<Tunnel | null>(null);
+  const [selectedTargetDomain, setSelectedTargetDomain] = useState<string>("default");
+  const [routingStrategy, setRoutingStrategy] = useState<"direct" | "subdomain">("direct");
+  const [customSubdomainInput, setCustomSubdomainInput] = useState<string>("");
+  const [startingRoutingTunnel, setStartingRoutingTunnel] = useState<boolean>(false);
 
   // Toast Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -230,18 +241,58 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleStartTunnel = async (tunnel: Tunnel) => {
-    setActionLoadingId(tunnel.id);
+  const handleOpenStartRoutingModal = (tunnel: Tunnel) => {
+    setRoutingModalTunnel(tunnel);
+    setSelectedTargetDomain(
+      tunnel.custom_domain_id ? String(tunnel.custom_domain_id) : "default"
+    );
+    setRoutingStrategy(tunnel.is_root_domain ? "direct" : "subdomain");
+    setCustomSubdomainInput(
+      tunnel.custom_subdomain && tunnel.custom_subdomain !== "@" ? tunnel.custom_subdomain : ""
+    );
+  };
+
+  const handleConfirmStartTunnel = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!routingModalTunnel) return;
+
+    setStartingRoutingTunnel(true);
+    setActionLoadingId(routingModalTunnel.id);
     setActionText("Starting cloudflared...");
+
     try {
-      await api.startTunnel(tunnel.id);
+      const isCustom = selectedTargetDomain !== "default";
+      const customDomainId = isCustom ? Number(selectedTargetDomain) : null;
+      const isRoot = isCustom ? routingStrategy === "direct" : false;
+      const subdomain =
+        isCustom && routingStrategy === "subdomain"
+          ? customSubdomainInput.trim() || null
+          : null;
+
+      await api.startTunnel(routingModalTunnel.id, {
+        custom_domain_id: customDomainId,
+        is_root_domain: isRoot,
+        custom_subdomain: subdomain,
+      });
+
+      setRoutingModalTunnel(null);
       await fetchData();
+
+      setToastMessage("Tunnel started successfully.");
+      setTimeout(() => {
+        setToastMessage((prev) => (prev === "Tunnel started successfully." ? null : prev));
+      }, 4000);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to start tunnel");
     } finally {
+      setStartingRoutingTunnel(false);
       setActionLoadingId(null);
       setActionText("");
     }
+  };
+
+  const handleStartTunnel = async (tunnel: Tunnel) => {
+    handleOpenStartRoutingModal(tunnel);
   };
 
   const handleStopTunnel = async (tunnel: Tunnel) => {
@@ -1474,6 +1525,310 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           </div>
         </div>
       )}
+
+      {/* ======================================================== */}
+      {/* MODAL: START TUNNEL ROUTING (Matching Screenshots 1-4) */}
+      {/* ======================================================== */}
+      {routingModalTunnel && (() => {
+        const selectedDomainObj = domains.find(
+          (d) => String(d.id) === selectedTargetDomain
+        );
+        const isCustomDomain = selectedTargetDomain !== "default" && !!selectedDomainObj;
+        const domainName = selectedDomainObj?.domain || "yourdomain.com";
+
+        // Determine preview URL and badge
+        let previewUrl = "https://[unique-hash].trycloudflare.com";
+        let previewBadge = "Quick Tunnel (trycloudflare)";
+
+        if (isCustomDomain) {
+          if (routingStrategy === "direct") {
+            previewUrl = `https://${domainName}`;
+            previewBadge = "Root Domain (Direct)";
+          } else {
+            previewBadge = "Subdomain";
+            if (customSubdomainInput.trim()) {
+              previewUrl = `https://${customSubdomainInput.trim().toLowerCase()}.${domainName}`;
+            } else {
+              previewUrl = `https://[random-friendly-name].${domainName}`;
+            }
+          }
+        }
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white border border-slate-100 rounded-3xl w-full max-w-lg p-6 sm:p-7 relative shadow-2xl space-y-5 animate-in zoom-in-95 duration-150">
+              {/* Centered Top Icon Matching Screenshot */}
+              <div className="text-center">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50/80 border border-indigo-100/80 flex items-center justify-center mx-auto mb-3 shadow-2xs">
+                  <svg
+                    className="w-6 h-6 text-[#2563eb]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="4" y="4" width="16" height="7" rx="2" fill="#2563eb" stroke="none" />
+                    <circle cx="8" cy="7.5" r="1" fill="white" />
+                    <circle cx="12" cy="7.5" r="1" fill="white" />
+                    <line x1="12" y1="11" x2="12" y2="16" stroke="#2563eb" strokeWidth="2.2" />
+                    <line x1="7" y1="16" x2="17" y2="16" stroke="#2563eb" strokeWidth="2.2" />
+                    <circle cx="7" cy="16" r="1.5" fill="#2563eb" />
+                    <circle cx="17" cy="16" r="1.5" fill="#2563eb" />
+                  </svg>
+                </div>
+                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Start Tunnel Routing
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Configure target domain and routing strategy for your tunnel
+                </p>
+              </div>
+
+              <form onSubmit={handleConfirmStartTunnel} className="space-y-4">
+                {/* 1. Target Domain Section */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-4 h-4 text-blue-600" />
+                      <label className="text-xs sm:text-sm font-bold text-slate-700">
+                        Target Domain
+                      </label>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      Cloudflare Network
+                    </span>
+                  </div>
+
+                  <div className="relative">
+                    <select
+                      value={selectedTargetDomain}
+                      onChange={(e) => setSelectedTargetDomain(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-white border-2 border-blue-400 rounded-xl text-sm font-semibold text-slate-800 shadow-2xs focus:outline-none focus:ring-4 focus:ring-blue-100 appearance-none cursor-pointer pr-10 transition"
+                    >
+                      <option value="default">
+                        Default Cloudflare Domain (trycloudflare.com)
+                      </option>
+                      {domains.map((dom) => (
+                        <option key={dom.id} value={String(dom.id)}>
+                          {dom.domain}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3.5 text-slate-500">
+                      <ChevronDown className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Routing Strategy Section (Only shown when custom domain selected) */}
+                {isCustomDomain && (
+                  <div className="space-y-2 pt-1 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-1.5">
+                      <GitFork className="w-4 h-4 text-blue-600 rotate-90" />
+                      <label className="text-xs sm:text-sm font-bold text-slate-700">
+                        Routing Strategy
+                      </label>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {/* Option 1: Direct Apex */}
+                      <div
+                        onClick={() => setRoutingStrategy("direct")}
+                        className={`p-3.5 rounded-xl border cursor-pointer transition select-none flex items-start gap-3 ${
+                          routingStrategy === "direct"
+                            ? "border-2 border-blue-600 bg-white ring-2 ring-blue-100/50 shadow-2xs"
+                            : "border border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                              routingStrategy === "direct"
+                                ? "border-2 border-blue-600"
+                                : "border border-slate-300"
+                            }`}
+                          >
+                            {routingStrategy === "direct" && (
+                              <div className="w-2 h-2 rounded-full bg-blue-600" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Globe className="w-4 h-4 text-blue-600 shrink-0" />
+                              <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                Use added domain directly
+                              </span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200 shrink-0">
+                              Direct Apex
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-normal">
+                            Route directly to root apex{" "}
+                            <span className="px-1.5 py-0.5 rounded bg-indigo-50 text-[#100091] font-mono font-bold text-[11px]">
+                              {domainName}
+                            </span>{" "}
+                            with no subdomain prefix
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Option 2: Subdomain */}
+                      <div
+                        onClick={() => setRoutingStrategy("subdomain")}
+                        className={`p-3.5 rounded-xl border cursor-pointer transition select-none flex items-start gap-3 ${
+                          routingStrategy === "subdomain"
+                            ? "border-2 border-blue-600 bg-white ring-2 ring-blue-100/50 shadow-2xs"
+                            : "border border-slate-200 bg-white hover:border-slate-300"
+                        }`}
+                      >
+                        <div className="shrink-0 mt-0.5">
+                          <div
+                            className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                              routingStrategy === "subdomain"
+                                ? "border-2 border-blue-600"
+                                : "border border-slate-300"
+                            }`}
+                          >
+                            {routingStrategy === "subdomain" && (
+                              <div className="w-2 h-2 rounded-full bg-blue-600" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Network className="w-4 h-4 text-blue-600 shrink-0" />
+                              <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                Use a subdomain
+                              </span>
+                            </div>
+                            <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-bold border border-slate-200 shrink-0">
+                              sub.domain
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-normal">
+                            Route using a custom named subdomain or auto-generated friendly prefix
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* 3. Custom Subdomain Input (Shown only when custom domain + "Use a subdomain" is selected) */}
+                {isCustomDomain && routingStrategy === "subdomain" && (
+                  <div className="space-y-1.5 pt-1 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-1.5">
+                      <Link2 className="w-3.5 h-3.5 text-blue-600" />
+                      <label className="text-xs font-semibold text-slate-700">
+                        Custom Subdomain (Optional)
+                      </label>
+                    </div>
+
+                    <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-100 transition bg-white shadow-2xs">
+                      <span className="px-3 text-slate-400 font-mono text-sm select-none">
+                        #
+                      </span>
+                      <input
+                        type="text"
+                        value={customSubdomainInput}
+                        onChange={(e) =>
+                          setCustomSubdomainInput(
+                            e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")
+                          )
+                        }
+                        placeholder="e.g. app or api"
+                        className="w-full py-2.5 px-1 bg-transparent text-sm text-slate-900 placeholder-slate-400 focus:outline-none"
+                      />
+                      <span className="px-3 py-2 text-xs font-mono font-medium text-slate-500 bg-slate-50 border-l border-slate-200 select-none shrink-0">
+                        .{domainName}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] text-slate-400 flex items-center gap-1.5 pt-0.5">
+                      <span>ⓘ</span>
+                      <span>Leave blank to automatically assign a friendly 4-word random name.</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* 4. PUBLIC ENDPOINT PREVIEW Box */}
+                <div className="rounded-2xl border border-slate-200/90 bg-slate-50/70 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                        PUBLIC ENDPOINT PREVIEW
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                        isCustomDomain && routingStrategy === "direct"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-slate-200/80 text-slate-600"
+                      }`}
+                    >
+                      {previewBadge}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-slate-900">
+                    <Shield className="w-5 h-5 text-emerald-600 fill-emerald-600/10 shrink-0" />
+                    <span className="text-sm sm:text-base font-extrabold tracking-tight truncate">
+                      {previewUrl}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-200/60 text-xs">
+                    <span className="text-slate-400 font-medium flex items-center gap-1">
+                      <span>→</span>
+                      <span>Forwarding target</span>
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded bg-white border border-slate-200 text-xs font-mono text-slate-700 shadow-2xs">
+                      127.0.0.1:<strong className="text-[#2563eb]">{routingModalTunnel.port}</strong>
+                    </span>
+                  </div>
+                </div>
+
+                {/* 5. Footer Action Buttons */}
+                <div className="pt-2 flex items-center justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setRoutingModalTunnel(null)}
+                    className="px-5 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs sm:text-sm font-semibold transition cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={startingRoutingTunnel}
+                    className="px-5 py-2.5 rounded-xl bg-[#059669] hover:bg-[#047857] text-white text-xs sm:text-sm font-bold shadow-sm transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {startingRoutingTunnel ? (
+                      <>
+                        <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Starting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Start Tunnel</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ======================================================== */}
       {/* FLOATING TOAST NOTIFICATION */}

@@ -141,6 +141,26 @@ class TunnelController extends Controller
             ]);
         }
 
+        // Apply any routing strategy parameters sent from the Start Tunnel Routing modal
+        $needsSave = false;
+        if ($request->has('custom_domain_id')) {
+            $val = $request->input('custom_domain_id');
+            $tunnel->custom_domain_id = ($val && $val !== 'default') ? (int) $val : null;
+            $needsSave = true;
+        }
+        if ($request->has('is_root_domain')) {
+            $tunnel->is_root_domain = (bool) $request->input('is_root_domain');
+            $needsSave = true;
+        }
+        if ($request->has('custom_subdomain')) {
+            $sub = $request->input('custom_subdomain');
+            $tunnel->custom_subdomain = $sub ? strtolower(trim($sub)) : null;
+            $needsSave = true;
+        }
+        if ($needsSave) {
+            $tunnel->save();
+        }
+
         try {
             $started = $this->manager->startTunnel($tunnel);
             $tunnel->refresh();

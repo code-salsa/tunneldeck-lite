@@ -202,13 +202,21 @@ export const api = {
     });
   },
 
-  startTunnel: async (id: number) => {
+  startTunnel: async (
+    id: number,
+    routingOptions?: {
+      custom_domain_id?: number | null;
+      is_root_domain?: boolean;
+      custom_subdomain?: string | null;
+    }
+  ) => {
     return apiRequest<{
       status: string;
       tunnel: Tunnel;
       message: string;
     }>(`/api/tunnels/${id}/start`, {
       method: "POST",
+      body: routingOptions ? JSON.stringify(routingOptions) : undefined,
     });
   },
 
