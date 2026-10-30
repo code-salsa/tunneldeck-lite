@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Cloud,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { api, CustomDomain } from "@/lib/api";
 
@@ -34,6 +35,9 @@ export default function CustomDomainsView() {
   // Delete Domain Confirmation Modal
   const [domainToDelete, setDomainToDelete] = useState<CustomDomain | null>(null);
   const [deletingDomain, setDeletingDomain] = useState(false);
+
+  // Toast Notification
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Validation States & Modals:
   // 'none' | 'validating' | 'failed_checklist' | 'failed_dialog' | 'success' | 'revalidate_prompt'
@@ -79,6 +83,11 @@ export default function CustomDomainsView() {
       setNewDomainName("");
       await fetchDomains();
 
+      setToastMessage("Domain added successfully.");
+      setTimeout(() => {
+        setToastMessage((prev) => (prev === "Domain added successfully." ? null : prev));
+      }, 4000);
+
       // Launch validation for the newly added domain
       if (res.domain) {
         startDomainValidation(res.domain);
@@ -97,6 +106,11 @@ export default function CustomDomainsView() {
       await api.deleteDomain(domainToDelete.id);
       setDomainToDelete(null);
       await fetchDomains();
+
+      setToastMessage("Domain deleted successfully.");
+      setTimeout(() => {
+        setToastMessage((prev) => (prev === "Domain deleted successfully." ? null : prev));
+      }, 4000);
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to delete domain");
     } finally {
@@ -1129,6 +1143,24 @@ export default function CustomDomainsView() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+      {/* ======================================================== */}
+      {/* FLOATING TOAST NOTIFICATION */}
+      {/* ======================================================== */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white border border-emerald-200 text-slate-800 rounded-2xl shadow-xl shadow-slate-900/10 animate-in slide-in-from-top-3 fade-in duration-200">
+          <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-slate-800">{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
     </div>

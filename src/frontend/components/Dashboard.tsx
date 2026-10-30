@@ -330,9 +330,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       await api.deleteTunnel(tunnelToDelete.id);
       setTunnelToDelete(null);
       await fetchData();
-      setToastMessage("Tunnel removed successfully.");
+      setToastMessage("Tunnel deleted successfully.");
       setTimeout(() => {
-        setToastMessage((prev) => (prev === "Tunnel removed successfully." ? null : prev));
+        setToastMessage((prev) => (prev === "Tunnel deleted successfully." ? null : prev));
       }, 4000);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to delete tunnel");
