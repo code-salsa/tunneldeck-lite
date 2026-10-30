@@ -11,7 +11,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Radio,
-  Sparkles,
 } from "lucide-react";
 import { api, User } from "@/lib/api";
 
@@ -45,12 +44,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
     }
   };
 
-  const handleFillCredentials = () => {
-    setEmail("admin@tunneldeck.online");
-    setPassword("123456");
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 relative overflow-hidden">
       {/* Subtle light background gradients */}
@@ -82,31 +75,6 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
         {/* White Card */}
         <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xl shadow-slate-200/70 relative">
-          {/* Default Demo Credentials Box */}
-          <div className="mb-6 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start justify-between gap-3 text-xs">
-            <div className="space-y-1 text-slate-700">
-              <div className="flex items-center gap-1.5 text-[#100091] font-semibold">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Default Credentials</span>
-              </div>
-              <div className="font-mono text-slate-600 text-[11px]">
-                <span className="text-slate-400">Email: </span>
-                <span className="font-medium text-slate-900">admin@tunneldeck.online</span>
-              </div>
-              <div className="font-mono text-slate-600 text-[11px]">
-                <span className="text-slate-400">Password: </span>
-                <span className="font-medium text-slate-900">123456</span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleFillCredentials}
-              className="px-2.5 py-1 rounded-lg bg-[#100091]/10 hover:bg-[#100091]/15 text-[#100091] border border-[#100091]/20 font-semibold transition cursor-pointer text-[11px] shrink-0"
-            >
-              Autofill
-            </button>
-          </div>
-
           {/* Error notification */}
           {error && (
             <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5">
