@@ -240,25 +240,23 @@ export default function CustomDomainsView() {
   };
 
   return (
-    <div className="space-y-6 w-full">
-      {/* ======================================================== */}
-      {/* HEADER SECTION */}
-      {/* ======================================================== */}
-      <div className="w-full">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
-          Custom Domains
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Configure and validate custom domains to route your local tunnels.
-        </p>
-      </div>
-
+    <div className="w-full">
       {/* ======================================================== */}
       {/* MAIN TWO-COLUMN CONTENT GRID */}
       {/* ======================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
-        {/* LEFT COLUMN: Table & Search Bar */}
-        <div className="lg:col-span-7 xl:col-span-7 2xl:col-span-7 space-y-4 w-full">
+        {/* LEFT COLUMN: Header, Search Bar & Table */}
+        <div className="lg:col-span-7 xl:col-span-7 2xl:col-span-7 space-y-6 w-full">
+          {/* HEADER SECTION */}
+          <div className="w-full">
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+              Custom Domains
+            </h1>
+            <p className="text-sm text-slate-500 mt-1">
+              Configure and validate custom domains to route your local tunnels.
+            </p>
+          </div>
+
           {/* SEARCH AND ADD DOMAIN BAR (Screenshot 1) */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1">
