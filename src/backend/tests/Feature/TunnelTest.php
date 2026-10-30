@@ -40,10 +40,8 @@ class TunnelTest extends TestCase
 
         $response = $this->actingAs($user, 'sanctum')->postJson('/api/tunnels', [
             'name' => 'Docs Server',
-            'subdomain' => 'docs-site',
-            'protocol' => 'http',
-            'port' => 3001,
-            'target_host' => '127.0.0.1',
+            'custom_subdomain' => 'docs-site',
+            'port' => 4500,
         ]);
 
         $response->assertStatus(201)
@@ -51,13 +49,14 @@ class TunnelTest extends TestCase
                 'status' => 'success',
                 'tunnel' => [
                     'name' => 'Docs Server',
-                    'subdomain' => 'docs-site',
-                    'port' => 3001,
+                    'port' => 4500,
+                    'custom_subdomain' => 'docs-site',
                 ],
             ]);
 
         $this->assertDatabaseHas('tunnels', [
-            'subdomain' => 'docs-site',
+            'name' => 'Docs Server',
+            'port' => 4500,
         ]);
     }
 

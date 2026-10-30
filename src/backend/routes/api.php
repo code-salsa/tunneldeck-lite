@@ -22,8 +22,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Tunnel Infrastructure endpoints
     Route::get('/tunnels', [TunnelController::class, 'index']);
+    Route::get('/stats', [TunnelController::class, 'stats']);
     Route::post('/tunnels', [TunnelController::class, 'store']);
+    Route::post('/tunnels/{tunnel}/start', [TunnelController::class, 'start']);
+    Route::post('/tunnels/{tunnel}/stop', [TunnelController::class, 'stop']);
+    Route::post('/tunnels/{tunnel}/restart', [TunnelController::class, 'restart']);
     Route::patch('/tunnels/{tunnel}/toggle', [TunnelController::class, 'toggleStatus']);
+    Route::get('/tunnels/{tunnel}/status', [TunnelController::class, 'status']);
     Route::delete('/tunnels/{tunnel}', [TunnelController::class, 'destroy']);
 });

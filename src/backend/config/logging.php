@@ -65,6 +65,13 @@ return [
             'replace_placeholders' => true,
         ],
 
+        'tunnels' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/tunnels.log'),
+            'level' => 'debug',
+            'replace_placeholders' => true,
+        ],
+
         'daily' => [
             'driver' => 'daily',
             'path' => storage_path('logs/laravel.log'),

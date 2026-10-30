@@ -35,3 +35,4 @@ src/backend/database/*.sqlite-journal
 .DS_Store
 Thumbs.db
 *.log
+

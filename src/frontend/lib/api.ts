@@ -9,15 +9,20 @@ export interface User {
 
 export interface Tunnel {
   id: number;
+  user_id?: number | null;
   name: string;
-  subdomain: string;
-  protocol: "http" | "https" | "tcp";
   port: number;
-  target_host: string;
-  public_url: string;
-  status: "active" | "paused" | "stopped";
-  connections_count: number;
-  last_active_at: string | null;
+  status: "stopped" | "starting" | "running" | "error";
+  public_url: string | null;
+  pid: number | null;
+  process_uuid?: string | null;
+  custom_subdomain?: string | null;
+  custom_domain_id?: number | null;
+  is_root_domain?: boolean;
+  health?: "healthy" | "warning" | "failed";
+  last_started_at?: string | null;
+  last_stopped_at?: string | null;
+  connections_count?: number;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +32,13 @@ export interface TunnelMetrics {
   active: number;
   paused: number;
   total_requests: number;
+}
+
+export interface Activity {
+  id: number;
+  description: string;
+  type: string;
+  created_at: string;
 }
 
 export const authStorage = {
@@ -129,12 +141,21 @@ export const api = {
     }>("/api/tunnels");
   },
 
+  getStats: async () => {
+    return apiRequest<{
+      status: string;
+      total: number;
+      running: number;
+      stopped: number;
+      last_started: string;
+      activities: Activity[];
+    }>("/api/stats");
+  },
+
   createTunnel: async (payload: {
     name: string;
-    subdomain?: string;
-    protocol: string;
     port: number;
-    target_host?: string;
+    custom_subdomain?: string;
   }) => {
     return apiRequest<{
       status: string;
@@ -146,6 +167,36 @@ export const api = {
     });
   },
 
+  startTunnel: async (id: number) => {
+    return apiRequest<{
+      status: string;
+      tunnel: Tunnel;
+      message: string;
+    }>(`/api/tunnels/${id}/start`, {
+      method: "POST",
+    });
+  },
+
+  stopTunnel: async (id: number) => {
+    return apiRequest<{
+      status: string;
+      tunnel: Tunnel;
+      message: string;
+    }>(`/api/tunnels/${id}/stop`, {
+      method: "POST",
+    });
+  },
+
+  restartTunnel: async (id: number) => {
+    return apiRequest<{
+      status: string;
+      tunnel: Tunnel;
+      message: string;
+    }>(`/api/tunnels/${id}/restart`, {
+      method: "POST",
+    });
+  },
+
   toggleTunnel: async (id: number) => {
     return apiRequest<{
       status: string;
@@ -154,6 +205,15 @@ export const api = {
     }>(`/api/tunnels/${id}/toggle`, {
       method: "PATCH",
     });
+  },
+
+  getTunnelStatus: async (id: number) => {
+    return apiRequest<{
+      status: string;
+      tunnel_status: string;
+      health: string;
+      public_url: string | null;
+    }>(`/api/tunnels/${id}/status`);
   },
 
   deleteTunnel: async (id: number) => {
@@ -175,4 +235,3 @@ export const api = {
     }>("/api/health");
   },
 };
-

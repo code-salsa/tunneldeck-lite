@@ -13,15 +13,18 @@ return new class extends Migration
     {
         Schema::create('tunnels', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('subdomain')->unique();
-            $table->string('protocol')->default('http');
-            $table->integer('port')->default(3000);
-            $table->string('target_host')->default('127.0.0.1');
-            $table->string('public_url');
-            $table->enum('status', ['active', 'paused', 'stopped'])->default('active');
-            $table->unsignedBigInteger('connections_count')->default(0);
-            $table->timestamp('last_active_at')->nullable();
+            $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('name', 100)->unique();
+            $table->integer('port')->unique()->index();
+            $table->string('status')->default('stopped')->index(); // stopped, starting, running, error
+            $table->string('public_url')->nullable();
+            $table->integer('pid')->nullable();
+            $table->string('process_uuid')->nullable();
+            $table->timestamp('last_started_at')->nullable();
+            $table->timestamp('last_stopped_at')->nullable();
+            $table->string('custom_subdomain')->nullable();
+            $table->unsignedBigInteger('custom_domain_id')->nullable();
+            $table->boolean('is_root_domain')->default(false);
             $table->timestamps();
         });
     }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Activity;
 use App\Models\Tunnel;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -15,7 +16,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Default Admin User
-        User::updateOrCreate(
+        $user = User::updateOrCreate(
             ['email' => 'admin@tunneldeck.online'],
             [
                 'name' => 'TunnelDeck Admin',
@@ -24,47 +25,31 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Default Sample Tunnels
+        // Sample Tunnels
         Tunnel::updateOrCreate(
-            ['subdomain' => 'api-dev'],
+            ['port' => 8000],
             [
+                'user_id' => $user->id,
                 'name' => 'Backend API Tunnel',
-                'protocol' => 'http',
-                'port' => 8000,
-                'target_host' => '127.0.0.1',
-                'public_url' => 'https://api-dev.tunneldeck.online',
-                'status' => 'active',
-                'connections_count' => 142,
-                'last_active_at' => now(),
+                'status' => 'stopped',
+                'custom_subdomain' => 'api-dev',
             ]
         );
 
         Tunnel::updateOrCreate(
-            ['subdomain' => 'frontend-app'],
+            ['port' => 3001],
             [
+                'user_id' => $user->id,
                 'name' => 'NextJS Frontend Preview',
-                'protocol' => 'http',
-                'port' => 3000,
-                'target_host' => 'localhost',
-                'public_url' => 'https://frontend-app.tunneldeck.online',
-                'status' => 'active',
-                'connections_count' => 89,
-                'last_active_at' => now()->subMinutes(12),
+                'status' => 'stopped',
+                'custom_subdomain' => 'frontend-app',
             ]
         );
 
-        Tunnel::updateOrCreate(
-            ['subdomain' => 'webhook-stripe'],
-            [
-                'name' => 'Stripe Webhook Listener',
-                'protocol' => 'http',
-                'port' => 4242,
-                'target_host' => 'localhost',
-                'public_url' => 'https://webhook-stripe.tunneldeck.online',
-                'status' => 'paused',
-                'connections_count' => 24,
-                'last_active_at' => now()->subHours(2),
-            ]
-        );
+        Activity::create([
+            'user_id' => $user->id,
+            'description' => 'TunnelDeck Lite Initialized with Cloudflare Tunneling Engine',
+            'type' => 'info',
+        ]);
     }
 }

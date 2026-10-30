@@ -99,3 +99,4 @@ Visit `http://localhost:3000` in your browser.
 | `POST` | `/api/tunnels` | Create a new forwarding tunnel | Yes (`Bearer token`) |
 | `PATCH` | `/api/tunnels/{id}/toggle` | Toggle tunnel status (active / paused) | Yes (`Bearer token`) |
 | `DELETE` | `/api/tunnels/{id}` | Delete a tunnel | Yes (`Bearer token`) |
+
