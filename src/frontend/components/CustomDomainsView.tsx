@@ -20,7 +20,6 @@ import { api, CustomDomain } from "@/lib/api";
 
 export default function CustomDomainsView() {
   const [domains, setDomains] = useState<CustomDomain[]>([]);
-  const [filterMode, setFilterMode] = useState<"my" | "all">("my");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -235,43 +234,15 @@ export default function CustomDomainsView() {
   return (
     <div className="space-y-6 w-full max-w-7xl">
       {/* ======================================================== */}
-      {/* HEADER SECTION (Matching Screenshot 1) */}
+      {/* HEADER SECTION */}
       {/* ======================================================== */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
-            Custom Domains
-          </h1>
-          <p className="text-sm text-slate-500 mt-1">
-            Configure and validate custom domains to route your local tunnels.
-          </p>
-        </div>
-
-        {/* Top-Right Toggle Pill (My Domains / All Domains) */}
-        <div className="inline-flex items-center rounded-full bg-slate-100 p-1 border border-slate-200/80 shadow-2xs shrink-0">
-          <button
-            type="button"
-            onClick={() => setFilterMode("my")}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
-              filterMode === "my"
-                ? "bg-[#100091] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            My Domains
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterMode("all")}
-            className={`px-4 py-1.5 rounded-full text-xs font-bold transition cursor-pointer ${
-              filterMode === "all"
-                ? "bg-[#100091] text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900"
-            }`}
-          >
-            All Domains
-          </button>
-        </div>
+      <div>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+          Custom Domains
+        </h1>
+        <p className="text-sm text-slate-500 mt-1">
+          Configure and validate custom domains to route your local tunnels.
+        </p>
       </div>
 
       {/* ======================================================== */}
