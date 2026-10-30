@@ -41,6 +41,16 @@ export interface Activity {
   created_at: string;
 }
 
+export interface CustomDomain {
+  id: number;
+  user_id?: number | null;
+  domain: string;
+  validation_status: string;
+  validated_at: string | null;
+  tunnels_count?: number;
+  created_at: string;
+}
+
 export const authStorage = {
   getToken: (): string | null => {
     if (typeof window === "undefined") return null;
@@ -221,6 +231,33 @@ export const api = {
       status: string;
       message: string;
     }>(`/api/tunnels/${id}`, {
+      method: "DELETE",
+    });
+  },
+
+  getDomains: async () => {
+    return apiRequest<{
+      status: string;
+      domains: CustomDomain[];
+    }>("/api/domains");
+  },
+
+  createDomain: async (domain: string) => {
+    return apiRequest<{
+      status: string;
+      domain: CustomDomain;
+      message: string;
+    }>("/api/domains", {
+      method: "POST",
+      body: JSON.stringify({ domain }),
+    });
+  },
+
+  deleteDomain: async (id: number) => {
+    return apiRequest<{
+      status: string;
+      message: string;
+    }>(`/api/domains/${id}`, {
       method: "DELETE",
     });
   },

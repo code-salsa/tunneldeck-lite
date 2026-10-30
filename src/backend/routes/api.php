@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\TunnelController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,4 +33,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::patch('/tunnels/{tunnel}/toggle', [TunnelController::class, 'toggleStatus']);
     Route::get('/tunnels/{tunnel}/status', [TunnelController::class, 'status']);
     Route::delete('/tunnels/{tunnel}', [TunnelController::class, 'destroy']);
+
+    // Domain endpoints
+    Route::get('/domains', [DomainController::class, 'index']);
+    Route::post('/domains', [DomainController::class, 'store']);
+    Route::delete('/domains/{domain}', [DomainController::class, 'destroy']);
 });
