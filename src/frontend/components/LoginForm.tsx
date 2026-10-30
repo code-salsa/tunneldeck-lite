@@ -52,53 +52,56 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   };
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-950 relative overflow-hidden">
-      {/* Background glowing gradients */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] h-[340px] bg-gradient-to-tr from-cyan-600/20 via-indigo-600/20 to-emerald-500/10 blur-[120px] pointer-events-none rounded-full" />
-      <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-blue-600/10 blur-[100px] pointer-events-none rounded-full" />
+    <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 relative overflow-hidden">
+      {/* Subtle light background gradients */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-[#100091]/5 via-indigo-100/40 to-blue-50 blur-[130px] pointer-events-none rounded-full" />
+      <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-100/30 blur-[90px] pointer-events-none rounded-full" />
 
       <div className="w-full max-w-md relative z-10">
         {/* Brand Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-slate-900/80 border border-slate-800 text-cyan-400 text-xs font-medium mb-4 backdrop-blur-md">
-            <Radio className="w-3.5 h-3.5 animate-pulse text-cyan-400" />
+        <div className="text-center mb-7">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#100091] text-white shadow-lg shadow-[#100091]/25 mb-3">
+            <Radio className="w-6 h-6 animate-pulse" />
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100/80 text-[#100091] text-xs font-semibold mb-3">
             <span>TunnelDeck Lite</span>
-            <span className="text-slate-500">•</span>
-            <span className="text-emerald-400 flex items-center gap-1">
-              <Database className="w-3 h-3" /> SQLite Active
+            <span className="text-slate-300">•</span>
+            <span className="text-emerald-700 flex items-center gap-1 font-medium">
+              <Database className="w-3 h-3 text-emerald-600" /> SQLite Active
             </span>
           </div>
 
-          <h1 className="text-3xl font-extrabold tracking-tight text-white mb-2">
-            Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-400">TunnelDeck</span>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 mb-1.5">
+            Sign in to <span className="text-[#100091]">TunnelDeck</span>
           </h1>
-          <p className="text-sm text-slate-400">
-            Sign in to manage and monitor your live secure tunnels
+          <p className="text-sm text-slate-500">
+            Developer tunnel manager & local port forwarder
           </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
-          {/* Quick Demo Credentials Pill */}
-          <div className="mb-6 p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/90 flex items-start justify-between gap-3 text-xs">
-            <div className="space-y-1 text-slate-300">
-              <div className="flex items-center gap-1.5 text-cyan-400 font-semibold">
+        {/* White Card */}
+        <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-xl shadow-slate-200/70 relative">
+          {/* Default Demo Credentials Box */}
+          <div className="mb-6 p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-start justify-between gap-3 text-xs">
+            <div className="space-y-1 text-slate-700">
+              <div className="flex items-center gap-1.5 text-[#100091] font-semibold">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Default Credentials</span>
               </div>
-              <div className="font-mono text-slate-400 text-[11px]">
-                <span>Email: </span>
-                <span className="text-slate-200">admin@tunneldeck.online</span>
+              <div className="font-mono text-slate-600 text-[11px]">
+                <span className="text-slate-400">Email: </span>
+                <span className="font-medium text-slate-900">admin@tunneldeck.online</span>
               </div>
-              <div className="font-mono text-slate-400 text-[11px]">
-                <span>Password: </span>
-                <span className="text-slate-200">123456</span>
+              <div className="font-mono text-slate-600 text-[11px]">
+                <span className="text-slate-400">Password: </span>
+                <span className="font-medium text-slate-900">123456</span>
               </div>
             </div>
             <button
               type="button"
               onClick={handleFillCredentials}
-              className="px-2.5 py-1 rounded-md bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-medium transition cursor-pointer text-[11px] shrink-0"
+              className="px-2.5 py-1 rounded-lg bg-[#100091]/10 hover:bg-[#100091]/15 text-[#100091] border border-[#100091]/20 font-semibold transition cursor-pointer text-[11px] shrink-0"
             >
               Autofill
             </button>
@@ -106,8 +109,8 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
 
           {/* Error notification */}
           {error && (
-            <div className="mb-5 p-3 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs flex items-start gap-2.5">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="mb-5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
               <span>{error}</span>
             </div>
           )}
@@ -115,11 +118,11 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                 Email Address
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Mail className="w-4 h-4" />
                 </div>
                 <input
@@ -128,7 +131,7 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@tunneldeck.online"
                   required
-                  className="w-full pl-9 pr-3 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                  className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] transition"
                 />
               </div>
             </div>
@@ -136,13 +139,13 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             {/* Password Field */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-slate-300">
+                <label className="block text-xs font-semibold text-slate-700">
                   Password
                 </label>
-                <span className="text-[11px] text-slate-500">No OTP required</span>
+                <span className="text-[11px] text-slate-500 font-medium">No OTP required</span>
               </div>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -151,12 +154,12 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••"
                   required
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500 transition"
+                  className="w-full pl-9 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 transition"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
@@ -172,11 +175,11 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 py-2.5 px-4 rounded-xl font-medium text-sm text-slate-950 bg-gradient-to-r from-cyan-400 via-sky-300 to-indigo-300 hover:opacity-90 active:scale-[0.99] transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 disabled:opacity-50 cursor-pointer"
+              className="w-full mt-2 py-2.5 px-4 rounded-xl font-semibold text-sm text-white bg-[#100091] hover:bg-[#0b0068] active:scale-[0.99] transition flex items-center justify-center gap-2 shadow-md shadow-[#100091]/25 disabled:opacity-50 cursor-pointer"
             >
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Verifying credentials...</span>
                 </>
               ) : (
@@ -189,20 +192,20 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
           </form>
 
           {/* SQLite feature footnote */}
-          <div className="mt-6 pt-5 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+          <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+            <span className="flex items-center gap-1.5 font-medium">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               Direct login (no OTP)
             </span>
-            <span className="flex items-center gap-1.5">
-              <Database className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="flex items-center gap-1.5 font-medium text-slate-600">
+              <Database className="w-3.5 h-3.5 text-[#100091]" />
               SQLite Database
             </span>
           </div>
         </div>
 
         {/* Footer info */}
-        <p className="text-center text-xs text-slate-600 mt-6">
+        <p className="text-center text-xs text-slate-400 mt-6">
           TunnelDeck Lite • Laravel Backend + Next.js Frontend
         </p>
       </div>

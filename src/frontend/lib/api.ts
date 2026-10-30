@@ -175,3 +175,4 @@ export const api = {
     }>("/api/health");
   },
 };
+

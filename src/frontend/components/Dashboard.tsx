@@ -7,7 +7,6 @@ import {
   LogOut,
   Plus,
   RefreshCw,
-  ExternalLink,
   Copy,
   Check,
   Play,
@@ -17,8 +16,8 @@ import {
   Activity,
   Layers,
   ArrowUpRight,
-  Shield,
   X,
+  Globe,
 } from "lucide-react";
 import { api, authStorage, Tunnel, TunnelMetrics, User } from "@/lib/api";
 
@@ -123,48 +122,50 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col">
       {/* Top Navbar */}
-      <header className="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40">
+      <header className="border-b border-slate-200/90 bg-white/95 backdrop-blur-md sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <div className="w-9 h-9 rounded-xl bg-[#100091] flex items-center justify-center shadow-md shadow-[#100091]/25">
               <Radio className="w-5 h-5 text-white animate-pulse" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base text-white tracking-tight">TunnelDeck</span>
-                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                <span className="font-extrabold text-base text-slate-900 tracking-tight">
+                  TunnelDeck
+                </span>
+                <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-indigo-50 text-[#100091] border border-indigo-200/80">
                   Lite
                 </span>
               </div>
-              <p className="text-[11px] text-slate-400">Laravel & Next.js Core</p>
+              <p className="text-[11px] text-slate-500 font-medium">Laravel & Next.js Core</p>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
             {/* SQLite Badge */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950 border border-slate-800 text-xs text-slate-300">
-              <Database className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-50 border border-slate-200 text-xs font-medium text-slate-700">
+              <Database className="w-3.5 h-3.5 text-[#100091]" />
               <span>SQLite</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
             </div>
 
             {/* User display */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/50 border border-slate-700/60">
-              <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 text-slate-950 font-bold text-xs flex items-center justify-center">
+            <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200">
+              <div className="w-7 h-7 rounded-full bg-[#100091] text-white font-bold text-xs flex items-center justify-center shadow-sm">
                 {user.name.charAt(0)}
               </div>
               <div className="hidden md:block text-left text-xs">
-                <div className="font-medium text-slate-200">{user.name}</div>
-                <div className="text-[10px] text-slate-400">{user.email}</div>
+                <div className="font-semibold text-slate-800">{user.name}</div>
+                <div className="text-[11px] text-slate-500">{user.email}</div>
               </div>
             </div>
 
             {/* Logout button */}
             <button
               onClick={onLogout}
-              className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition cursor-pointer"
+              className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -174,14 +175,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-7">
         {/* Welcome Banner & Action Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 via-slate-900/90 to-slate-950 p-6 rounded-2xl border border-slate-800/80 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
           <div>
-            <h2 className="text-2xl font-bold text-white tracking-tight">
+            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
               Tunnels Control Center
             </h2>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-slate-500 mt-1">
               Active developer tunnel instances securely forwarded from localhost
             </p>
           </div>
@@ -189,15 +190,15 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
             <button
               onClick={fetchTunnels}
               disabled={loading}
-              className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium border border-slate-700 transition flex items-center gap-2 cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold border border-slate-300 transition flex items-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${loading ? "animate-spin" : ""}`} />
               <span>Refresh</span>
             </button>
 
             <button
               onClick={() => setIsModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 hover:opacity-90 text-slate-950 text-xs font-semibold shadow-lg shadow-cyan-500/20 transition flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-semibold shadow-md shadow-[#100091]/25 transition flex items-center gap-2 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>New Tunnel</span>
@@ -207,66 +208,66 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
         {/* Metrics Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5">
-            <div className="flex items-center justify-between text-slate-400 mb-3">
-              <span className="text-xs font-medium uppercase tracking-wider">Active Tunnels</span>
-              <Activity className="w-4 h-4 text-emerald-400" />
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Active Tunnels</span>
+              <Activity className="w-4 h-4 text-emerald-600" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-white">{metrics.active}</span>
-              <span className="text-xs text-emerald-400 font-medium">Online</span>
+              <span className="text-3xl font-extrabold text-slate-900">{metrics.active}</span>
+              <span className="text-xs text-emerald-600 font-semibold">Online</span>
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5">
-            <div className="flex items-center justify-between text-slate-400 mb-3">
-              <span className="text-xs font-medium uppercase tracking-wider">Total Tunnels</span>
-              <Layers className="w-4 h-4 text-cyan-400" />
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Total Tunnels</span>
+              <Layers className="w-4 h-4 text-[#100091]" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-white">{metrics.total}</span>
-              <span className="text-xs text-slate-500">Configured</span>
+              <span className="text-3xl font-extrabold text-slate-900">{metrics.total}</span>
+              <span className="text-xs text-slate-500 font-medium">Configured</span>
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5">
-            <div className="flex items-center justify-between text-slate-400 mb-3">
-              <span className="text-xs font-medium uppercase tracking-wider">Total Requests</span>
-              <ArrowUpRight className="w-4 h-4 text-indigo-400" />
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">Total Requests</span>
+              <ArrowUpRight className="w-4 h-4 text-[#100091]" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-extrabold text-white">
+              <span className="text-3xl font-extrabold text-slate-900">
                 {metrics.total_requests.toLocaleString()}
               </span>
-              <span className="text-xs text-indigo-400 font-medium">Forwarded</span>
+              <span className="text-xs text-[#100091] font-semibold">Forwarded</span>
             </div>
           </div>
 
-          <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-5">
-            <div className="flex items-center justify-between text-slate-400 mb-3">
-              <span className="text-xs font-medium uppercase tracking-wider">SQLite Status</span>
-              <Database className="w-4 h-4 text-sky-400" />
+          <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-sm">
+            <div className="flex items-center justify-between text-slate-500 mb-2">
+              <span className="text-xs font-semibold uppercase tracking-wider">SQLite Status</span>
+              <Database className="w-4 h-4 text-[#100091]" />
             </div>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-semibold text-emerald-400">Operational</span>
-              <span className="text-xs text-slate-500">database.sqlite</span>
+              <span className="text-sm font-bold text-emerald-600">Operational</span>
+              <span className="text-xs text-slate-500 font-medium">database.sqlite</span>
             </div>
           </div>
         </div>
 
         {/* Tunnels List */}
-        <div className="bg-slate-900/80 border border-slate-800/80 rounded-2xl overflow-hidden shadow-xl">
-          <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm">
+          <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/70 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-cyan-400" />
-              <h3 className="font-semibold text-white text-sm">Forwarding Tunnels</h3>
+              <Server className="w-4 h-4 text-[#100091]" />
+              <h3 className="font-bold text-slate-900 text-sm">Forwarding Tunnels</h3>
             </div>
-            <span className="text-xs text-slate-400">{tunnels.length} Tunnels</span>
+            <span className="text-xs font-medium text-slate-500">{tunnels.length} Registered</span>
           </div>
 
           {loading ? (
             <div className="py-16 text-center text-slate-500 text-sm">
-              <div className="w-6 h-6 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+              <div className="w-6 h-6 border-2 border-[#100091] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
               <span>Fetching tunnels from SQLite...</span>
             </div>
           ) : tunnels.length === 0 ? (
@@ -274,33 +275,33 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               <p>No tunnels registered yet.</p>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="mt-3 text-cyan-400 hover:underline text-xs"
+                className="mt-3 text-[#100091] font-semibold hover:underline text-xs"
               >
                 + Create your first tunnel
               </button>
             </div>
           ) : (
-            <div className="divide-y divide-slate-800/60">
+            <div className="divide-y divide-slate-100">
               {tunnels.map((tunnel) => (
                 <div
                   key={tunnel.id}
-                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-800/30 transition"
+                  className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/70 transition"
                 >
                   <div className="space-y-1.5">
                     <div className="flex items-center gap-2.5">
-                      <span className="font-semibold text-white text-sm">{tunnel.name}</span>
+                      <span className="font-bold text-slate-900 text-sm">{tunnel.name}</span>
                       <span
-                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 ${
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 ${
                           tunnel.status === "active"
-                            ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                            : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            : "bg-amber-50 text-amber-700 border border-amber-200"
                         }`}
                       >
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
                             tunnel.status === "active"
-                              ? "bg-emerald-400 animate-pulse"
-                              : "bg-amber-400"
+                              ? "bg-emerald-500 animate-pulse"
+                              : "bg-amber-500"
                           }`}
                         />
                         {tunnel.status}
@@ -309,30 +310,31 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
                     <div className="flex flex-wrap items-center gap-3 text-xs">
                       {/* Public Endpoint */}
-                      <div className="flex items-center gap-1.5 text-cyan-400 font-mono bg-slate-950/70 px-2.5 py-1 rounded-lg border border-slate-800">
+                      <div className="flex items-center gap-1.5 text-[#100091] font-mono bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-100 font-medium">
+                        <Globe className="w-3.5 h-3.5 text-[#100091]" />
                         <span>{tunnel.public_url}</span>
                         <button
                           onClick={() => handleCopy(tunnel.id, tunnel.public_url)}
-                          className="hover:text-white transition ml-1 text-slate-400"
+                          className="hover:text-slate-900 transition ml-1 text-slate-400"
                           title="Copy Public URL"
                         >
                           {copiedId === tunnel.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-400" />
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
                           ) : (
                             <Copy className="w-3.5 h-3.5" />
                           )}
                         </button>
                       </div>
 
-                      <span className="text-slate-600">→</span>
+                      <span className="text-slate-400 font-bold">→</span>
 
                       {/* Local Target */}
-                      <div className="text-slate-400 font-mono bg-slate-950/70 px-2.5 py-1 rounded-lg border border-slate-800">
+                      <div className="text-slate-700 font-mono bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
                         {tunnel.protocol.toUpperCase()}://{tunnel.target_host}:{tunnel.port}
                       </div>
 
-                      <span className="text-slate-500 text-[11px]">
-                        {tunnel.connections_count} requests
+                      <span className="text-slate-500 text-[11px] font-medium">
+                        {tunnel.connections_count} requests forwarded
                       </span>
                     </div>
                   </div>
@@ -342,10 +344,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     <button
                       onClick={() => handleToggle(tunnel)}
                       disabled={togglingId === tunnel.id}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 ${
                         tunnel.status === "active"
-                          ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
-                          : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                          ? "bg-amber-50 hover:bg-amber-100/80 text-amber-800 border-amber-200"
+                          : "bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border-emerald-200"
                       }`}
                     >
                       {tunnel.status === "active" ? (
@@ -363,7 +365,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
                     <button
                       onClick={() => handleDelete(tunnel.id)}
-                      className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/20 transition cursor-pointer"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
                       title="Delete Tunnel"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -378,23 +380,23 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
       {/* Modal: New Tunnel */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white transition"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="text-lg font-bold text-white mb-1">Create Forwarding Tunnel</h3>
-            <p className="text-xs text-slate-400 mb-5">
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Create Forwarding Tunnel</h3>
+            <p className="text-xs text-slate-500 mb-5">
               Expose a local port securely through a TunnelDeck domain
             </p>
 
             <form onSubmit={handleCreateTunnel} className="space-y-4">
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Tunnel Name
                 </label>
                 <input
@@ -403,12 +405,12 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   placeholder="e.g. My Next.js Web App"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Subdomain (Optional)
                 </label>
                 <div className="flex items-center">
@@ -417,9 +419,9 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     placeholder="my-app"
                     value={formData.subdomain}
                     onChange={(e) => setFormData({ ...formData, subdomain: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-l-xl text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-l-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
                   />
-                  <span className="px-3 py-2 bg-slate-800 text-xs text-slate-400 border border-l-0 border-slate-700 rounded-r-xl">
+                  <span className="px-3 py-2 bg-slate-100 text-xs font-medium text-slate-600 border border-l-0 border-slate-300 rounded-r-xl">
                     .tunneldeck.online
                   </span>
                 </div>
@@ -427,13 +429,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Protocol
                   </label>
                   <select
                     value={formData.protocol}
                     onChange={(e) => setFormData({ ...formData, protocol: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
                   >
                     <option value="http">HTTP</option>
                     <option value="https">HTTPS</option>
@@ -442,7 +444,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Local Port
                   </label>
                   <input
@@ -452,13 +454,13 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                     max={65535}
                     value={formData.port}
                     onChange={(e) => setFormData({ ...formData, port: Number(e.target.value) })}
-                    className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-300 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Local Host
                 </label>
                 <input
@@ -466,7 +468,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   value={formData.target_host}
                   onChange={(e) => setFormData({ ...formData, target_host: e.target.value })}
                   placeholder="127.0.0.1"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
                 />
               </div>
 
@@ -474,14 +476,14 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-400 hover:text-white text-xs font-medium transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-medium transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creating}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 text-xs font-semibold hover:opacity-90 transition disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#100091] text-white text-xs font-semibold hover:bg-[#0b0068] transition shadow-md shadow-[#100091]/25 disabled:opacity-50 cursor-pointer"
                 >
                   {creating ? "Creating..." : "Save Tunnel"}
                 </button>
