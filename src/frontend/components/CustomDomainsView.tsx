@@ -13,7 +13,8 @@ import {
   ExternalLink,
   Shield,
   RefreshCw,
-  ArrowRight,
+  Cloud,
+  Sparkles,
 } from "lucide-react";
 import { api, CustomDomain } from "@/lib/api";
 
@@ -229,7 +230,7 @@ export default function CustomDomainsView() {
   };
 
   return (
-    <div className="space-y-6 max-w-6xl">
+    <div className="space-y-6 w-full max-w-7xl">
       {/* ======================================================== */}
       {/* HEADER SECTION (Matching Screenshot 1) */}
       {/* ======================================================== */}
@@ -271,148 +272,281 @@ export default function CustomDomainsView() {
       </div>
 
       {/* ======================================================== */}
-      {/* SEARCH AND ADD DOMAIN BAR (Screenshot 1) */}
+      {/* MAIN TWO-COLUMN CONTENT GRID */}
       {/* ======================================================== */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-2xl">
-          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-            <Search className="w-4 h-4" />
-          </div>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search custom domains..."
-            className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] shadow-2xs transition"
-          />
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* LEFT COLUMN: Table & Search Bar */}
+        <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+          {/* SEARCH AND ADD DOMAIN BAR (Screenshot 1) */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <Search className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search custom domains..."
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] shadow-2xs transition"
+              />
+            </div>
 
-        <button
-          type="button"
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-6 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-sm font-semibold shadow-md shadow-[#100091]/25 transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Add Domain</span>
-        </button>
-      </div>
-
-      {/* ======================================================== */}
-      {/* CONFIGURED DOMAINS TABLE CARD (Screenshot 1) */}
-      {/* ======================================================== */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
-        {/* Table Card Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
-          <div className="flex items-center gap-2.5">
-            <Globe className="w-4 h-4 text-blue-600 stroke-[2.2]" />
-            <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
-              Configured Domains
-            </h3>
-          </div>
-          <span className="text-xs font-semibold text-slate-400">
-            {filteredDomains.length} Domains
-          </span>
-        </div>
-
-        {/* Table Body */}
-        {loading ? (
-          <div className="py-16 text-center text-slate-500 text-sm">
-            <div className="w-6 h-6 border-2 border-[#100091] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            <span>Loading domains...</span>
-          </div>
-        ) : filteredDomains.length === 0 ? (
-          <div className="py-16 text-center text-slate-500 text-sm space-y-3">
-            <p>No custom domains found.</p>
             <button
+              type="button"
               onClick={() => setIsAddModalOpen(true)}
-              className="text-[#100091] font-semibold hover:underline text-xs"
+              className="px-5 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-sm font-semibold shadow-md shadow-[#100091]/25 transition flex items-center justify-center gap-2 cursor-pointer shrink-0"
             >
-              + Add a new custom domain
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Add Domain</span>
             </button>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  <th className="py-3.5 px-6 font-bold">Domain</th>
-                  <th className="py-3.5 px-6 font-bold">Status</th>
-                  <th className="py-3.5 px-6 font-bold">Validated At</th>
-                  <th className="py-3.5 px-6 font-bold text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
-                {filteredDomains.map((dom) => {
-                  const isValidated = dom.validation_status === "validated";
-                  const isFailed = dom.validation_status === "failed";
 
-                  return (
-                    <tr
-                      key={dom.id}
-                      className="hover:bg-slate-50/60 transition group"
-                    >
-                      {/* Domain Name */}
-                      <td className="py-4 px-6 font-bold text-slate-900 text-sm">
-                        {dom.domain}
-                      </td>
+          {/* CONFIGURED DOMAINS TABLE CARD (Screenshot 1) */}
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
+            {/* Table Card Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
+              <div className="flex items-center gap-2.5">
+                <Globe className="w-4 h-4 text-blue-600 stroke-[2.2]" />
+                <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
+                  Configured Domains
+                </h3>
+              </div>
+              <span className="text-xs font-semibold text-slate-400">
+                {filteredDomains.length} Domains
+              </span>
+            </div>
 
-                      {/* Status Badge (Matching Screenshot 1) */}
-                      <td className="py-4 px-6">
-                        {isValidated ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            Validated
-                          </span>
-                        ) : isFailed ? (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-500 border border-rose-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
-                            Failed
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                            Pending
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Validated At */}
-                      <td className="py-4 px-6 text-slate-600 font-medium">
-                        {isValidated ? formatDate(dom.validated_at) : "-"}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-4 px-6 text-right">
-                        <div className="inline-flex items-center justify-end gap-2.5">
-                          {/* Validate Button */}
-                          <button
-                            type="button"
-                            onClick={() => startDomainValidation(dom)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition cursor-pointer shadow-2xs"
-                            title="Validate Domain with Cloudflare"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                            <span>Validate</span>
-                          </button>
-
-                          {/* Delete Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteDomain(dom.id)}
-                            className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-rose-200/70 transition cursor-pointer"
-                            title="Delete Domain"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
+            {/* Table Body */}
+            {loading ? (
+              <div className="py-16 text-center text-slate-500 text-sm">
+                <div className="w-6 h-6 border-2 border-[#100091] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                <span>Loading domains...</span>
+              </div>
+            ) : filteredDomains.length === 0 ? (
+              <div className="py-16 text-center text-slate-500 text-sm space-y-3">
+                <p>No custom domains found.</p>
+                <button
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="text-[#100091] font-semibold hover:underline text-xs"
+                >
+                  + Add a new custom domain
+                </button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                      <th className="py-3.5 px-6 font-bold">Domain</th>
+                      <th className="py-3.5 px-6 font-bold">Status</th>
+                      <th className="py-3.5 px-6 font-bold">Validated At</th>
+                      <th className="py-3.5 px-6 font-bold text-right">Actions</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-xs">
+                    {filteredDomains.map((dom) => {
+                      const isValidated = dom.validation_status === "validated";
+                      const isFailed = dom.validation_status === "failed";
+
+                      return (
+                        <tr
+                          key={dom.id}
+                          className="hover:bg-slate-50/60 transition group"
+                        >
+                          {/* Domain Name */}
+                          <td className="py-4 px-6 font-bold text-slate-900 text-sm">
+                            {dom.domain}
+                          </td>
+
+                          {/* Status Badge (Matching Screenshot 1) */}
+                          <td className="py-4 px-6">
+                            {isValidated ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                Validated
+                              </span>
+                            ) : isFailed ? (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-500 border border-rose-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                                Failed
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-600 border border-amber-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                                Pending
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Validated At */}
+                          <td className="py-4 px-6 text-slate-600 font-medium">
+                            {isValidated ? formatDate(dom.validated_at) : "-"}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-4 px-6 text-right">
+                            <div className="inline-flex items-center justify-end gap-2.5">
+                              {/* Validate Button */}
+                              <button
+                                type="button"
+                                onClick={() => startDomainValidation(dom)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border border-emerald-300 text-emerald-700 hover:bg-emerald-50 transition cursor-pointer shadow-2xs"
+                                title="Validate Domain with Cloudflare"
+                              >
+                                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>Validate</span>
+                              </button>
+
+                              {/* Delete Button */}
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteDomain(dom.id)}
+                                className="p-1.5 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 border border-rose-200/70 transition cursor-pointer"
+                                title="Delete Domain"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+
+        {/* RIGHT COLUMN: STEP-BY-STEP FREE CLOUDFLARE GUIDE */}
+        <div className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-6">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-6 space-y-5">
+            {/* Guide Header */}
+            <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-orange-500 shadow-2xs">
+                  <Cloud className="w-5 h-5 fill-current" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
+                    Connect Domain in Cloudflare
+                  </h3>
+                  <p className="text-[11px] text-slate-400">Step-by-step free setup guide</p>
+                </div>
+              </div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
+                Free Plan
+              </span>
+            </div>
+
+            {/* Steps List */}
+            <div className="space-y-4">
+              {/* Step 1 */}
+              <div className="flex gap-3 text-xs">
+                <div className="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  1
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="font-bold text-slate-900">Sign Up / Log In to Cloudflare</h4>
+                  <p className="text-slate-500 text-[11px] leading-relaxed">
+                    Create a free account at{" "}
+                    <a
+                      href="https://dash.cloudflare.com/sign-up"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#100091] font-semibold hover:underline inline-flex items-center gap-0.5"
+                    >
+                      dash.cloudflare.com
+                      <ExternalLink className="w-2.5 h-2.5 inline" />
+                    </a>
+                    . No credit card required.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="flex gap-3 text-xs">
+                <div className="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  2
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="font-bold text-slate-900">Add Your Domain</h4>
+                  <p className="text-slate-500 text-[11px] leading-relaxed">
+                    Click <strong>&quot;+ Add a Site&quot;</strong>, enter your root domain (e.g.{" "}
+                    <code className="bg-slate-100 text-slate-800 px-1 py-0.5 rounded text-[10px] font-mono">
+                      example.com
+                    </code>
+                    ), and choose the <strong>Free ($0/month)</strong> plan.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="flex gap-3 text-xs">
+                <div className="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  3
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="font-bold text-slate-900">Automatic DNS Records Scan</h4>
+                  <p className="text-slate-500 text-[11px] leading-relaxed">
+                    Cloudflare will automatically import your existing DNS records. Review them and click <strong>Continue</strong>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="flex gap-3 text-xs">
+                <div className="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  4
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="font-bold text-slate-900">Update Nameservers at Registrar</h4>
+                  <p className="text-slate-500 text-[11px] leading-relaxed">
+                    Log in to your registrar (GoDaddy, Namecheap, Hostinger, etc.), open <strong>DNS / Nameservers</strong>, and replace them with the <strong>2 Cloudflare nameservers</strong> provided.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 5 */}
+              <div className="flex gap-3 text-xs">
+                <div className="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  5
+                </div>
+                <div className="space-y-0.5">
+                  <h4 className="font-bold text-slate-900">Validate in TunnelDeck</h4>
+                  <p className="text-slate-500 text-[11px] leading-relaxed">
+                    Add the domain on the left and click <strong>Validate</strong>. Cloudflared will authenticate your zone and route tunnels automatically!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Perks Callout */}
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-[11px]">
+              <div className="flex items-center gap-1.5 font-bold text-slate-800">
+                <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Free Plan Includes:</span>
+              </div>
+              <ul className="space-y-1 text-slate-500 text-[11px] pl-4 list-disc">
+                <li>Automatic SSL/TLS encryption for all subdomains</li>
+                <li>Unlimited bandwidth for Cloudflare Tunnels</li>
+                <li>Global Edge CDN &amp; DDoS protection</li>
+              </ul>
+            </div>
+
+            {/* Link Out to Cloudflare */}
+            <a
+              href="https://dash.cloudflare.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-md shadow-[#100091]/25 cursor-pointer"
+            >
+              <span>Open Cloudflare Dashboard</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          </div>
+        </div>
       </div>
 
       {/* ======================================================== */}
