@@ -232,11 +232,11 @@ export default function CustomDomainsView() {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-7xl">
+    <div className="space-y-6 w-full">
       {/* ======================================================== */}
       {/* HEADER SECTION */}
       {/* ======================================================== */}
-      <div>
+      <div className="w-full">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
           Custom Domains
         </h1>
@@ -248,9 +248,9 @@ export default function CustomDomainsView() {
       {/* ======================================================== */}
       {/* MAIN TWO-COLUMN CONTENT GRID */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
         {/* LEFT COLUMN: Table & Search Bar */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+        <div className="lg:col-span-7 xl:col-span-7 2xl:col-span-7 space-y-4 w-full">
           {/* SEARCH AND ADD DOMAIN BAR (Screenshot 1) */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <div className="relative flex-1">
@@ -456,8 +456,8 @@ export default function CustomDomainsView() {
         </div>
 
         {/* RIGHT COLUMN: STEP-BY-STEP FREE CLOUDFLARE GUIDE */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-6">
-          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-6 space-y-5">
+        <div className="lg:col-span-5 xl:col-span-5 2xl:col-span-5 w-full space-y-4 lg:sticky lg:top-6">
+          <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-5 sm:p-6 space-y-5 w-full">
             {/* Guide Header */}
             <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
