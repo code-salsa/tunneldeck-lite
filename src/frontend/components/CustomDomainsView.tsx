@@ -513,9 +513,15 @@ export default function CustomDomainsView() {
               </h3>
             </div>
 
-            {/* Circular Blue Spinner (Matching Screenshot 3 & 5) */}
+            {/* Circular Blue Spinner during validation, Green Tick on Success */}
             <div className="my-5 flex justify-center">
-              <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              {modalState === "success" ? (
+                <div className="w-16 h-16 rounded-full border-2 border-emerald-500 bg-emerald-50 flex items-center justify-center text-emerald-600 animate-in zoom-in-75 duration-300 shadow-sm">
+                  <Check className="w-9 h-9 stroke-[3]" />
+                </div>
+              ) : (
+                <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              )}
             </div>
 
             {/* Status Heading */}
