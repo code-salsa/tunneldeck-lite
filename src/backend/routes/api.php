@@ -34,8 +34,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tunnels/{tunnel}/status', [TunnelController::class, 'status']);
     Route::delete('/tunnels/{tunnel}', [TunnelController::class, 'destroy']);
 
-    // Domain endpoints
+    // Domain & Cloudflare validation endpoints
     Route::get('/domains', [DomainController::class, 'index']);
     Route::post('/domains', [DomainController::class, 'store']);
-    Route::delete('/domains/{domain}', [DomainController::class, 'destroy']);
+    Route::post('/domains/{id}/validate', [DomainController::class, 'validateDomain']);
+    Route::delete('/domains/{id}', [DomainController::class, 'destroy']);
+    Route::post('/cloudflare/login', [DomainController::class, 'loginCloudflare']);
+    Route::get('/cloudflare/status', [DomainController::class, 'cloudflareStatus']);
 });

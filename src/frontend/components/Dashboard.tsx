@@ -31,6 +31,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { api, Activity, CustomDomain, Tunnel, TunnelMetrics, User } from "@/lib/api";
+import CustomDomainsView from "./CustomDomainsView";
 
 interface DashboardProps {
   user: User;
@@ -796,88 +797,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
           {/* 3. DOMAINS TAB */}
           {activeTab === "domains" && (
-            <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    Custom Domains Management
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">
-                    Map custom domains and subdomains directly to your tunnels using Cloudflare DNS
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsDomainModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-semibold shadow-md shadow-[#100091]/25 transition flex items-center gap-2 cursor-pointer shrink-0"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Domain</span>
-                </button>
-              </div>
-
-              {/* Domains List */}
-              <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/70 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-[#100091]" />
-                    <h3 className="font-bold text-slate-900 text-sm">Registered Domains</h3>
-                  </div>
-                  <span className="text-xs font-medium text-slate-500">{domains.length} Domains</span>
-                </div>
-
-                {domains.length === 0 ? (
-                  <div className="py-16 text-center text-slate-500 text-sm space-y-3">
-                    <p>No custom domains registered yet.</p>
-                    <button
-                      onClick={() => setIsDomainModalOpen(true)}
-                      className="text-[#100091] font-semibold hover:underline text-xs"
-                    >
-                      + Connect your first custom domain
-                    </button>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-slate-100">
-                    {domains.map((dom) => (
-                      <div
-                        key={dom.id}
-                        className="p-5 flex items-center justify-between gap-4 hover:bg-slate-50/70 transition"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2.5">
-                            <span className="font-bold text-slate-900 text-sm">{dom.domain}</span>
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              {dom.validation_status}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-400">
-                            {dom.tunnels_count || 0} active tunnel routes
-                          </p>
-                        </div>
-
-                        <button
-                          onClick={() => handleDeleteDomain(dom.id)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer"
-                          title="Remove Domain"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Info Box */}
-              <div className="p-5 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-slate-700 text-xs space-y-2">
-                <div className="font-semibold text-[#100091] flex items-center gap-1.5 text-sm">
-                  <Shield className="w-4 h-4" />
-                  <span>Cloudflare Nameserver Delegation</span>
-                </div>
-                <p className="text-slate-600 leading-relaxed">
-                  To route tunnels to named custom domains (e.g. <code>api.yourdomain.com</code>), ensure your domain is added to your Cloudflare account. Cloudflared automatically provisions certificates and updates DNS records on tunnel startup.
-                </p>
-              </div>
-            </div>
+            <CustomDomainsView />
           )}
 
           {/* 4. SETTINGS TAB */}
@@ -1063,59 +983,6 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL: ADD CUSTOM DOMAIN */}
-      {/* ======================================================== */}
-      {isDomainModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
-            <button
-              onClick={() => setIsDomainModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Connect Custom Domain</h3>
-            <p className="text-xs text-slate-500 mb-5">
-              Add a domain delegated to your Cloudflare account
-            </p>
-
-            <form onSubmit={handleCreateDomain} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Domain Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. dev.mycompany.com"
-                  value={domainInput}
-                  onChange={(e) => setDomainInput(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-3 pt-3">
-                <button
-                  type="button"
-                  onClick={() => setIsDomainModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-medium transition cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creatingDomain}
-                  className="px-4 py-2 rounded-xl bg-[#100091] text-white text-xs font-semibold hover:bg-[#0b0068] transition shadow-md shadow-[#100091]/25 disabled:opacity-50 cursor-pointer"
-                >
-                  {creatingDomain ? "Adding..." : "Add Domain"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

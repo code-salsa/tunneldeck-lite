@@ -262,6 +262,40 @@ export const api = {
     });
   },
 
+  validateDomain: async (id: number) => {
+    return apiRequest<{
+      success: boolean;
+      status: string;
+      step1: boolean;
+      step2: boolean;
+      step3: boolean;
+      requires_auth?: boolean;
+      auth_zone?: string | null;
+      validated_at?: string | null;
+      message: string;
+    }>(`/api/domains/${id}/validate`, {
+      method: "POST",
+    });
+  },
+
+  loginCloudflare: async () => {
+    return apiRequest<{
+      status: string;
+      login_url: string | null;
+      message: string;
+    }>("/api/cloudflare/login", {
+      method: "POST",
+    });
+  },
+
+  getCloudflareStatus: async () => {
+    return apiRequest<{
+      status: string;
+      has_cert: boolean;
+      auth_zone: string | null;
+    }>("/api/cloudflare/status");
+  },
+
   getHealth: async () => {
     return apiRequest<{
       status: string;

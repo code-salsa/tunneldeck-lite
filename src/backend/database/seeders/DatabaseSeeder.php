@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Activity;
+use App\Models\CustomDomain;
 use App\Models\Tunnel;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -43,6 +44,43 @@ class DatabaseSeeder extends Seeder
                 'name' => 'NextJS Frontend Preview',
                 'status' => 'stopped',
                 'custom_subdomain' => 'frontend-app',
+            ]
+        );
+
+        // Seed Domains matching the screenshot
+        CustomDomain::updateOrCreate(
+            ['domain' => 'tunneldeck.online'],
+            [
+                'user_id' => $user->id,
+                'validation_status' => 'failed',
+                'validated_at' => null,
+            ]
+        );
+
+        CustomDomain::updateOrCreate(
+            ['domain' => 'altrisign.online'],
+            [
+                'user_id' => $user->id,
+                'validation_status' => 'validated',
+                'validated_at' => now()->subDays(14)->setTime(4, 42),
+            ]
+        );
+
+        CustomDomain::updateOrCreate(
+            ['domain' => 'altricampus.online'],
+            [
+                'user_id' => $user->id,
+                'validation_status' => 'validated',
+                'validated_at' => now()->subDays(14)->setTime(19, 50),
+            ]
+        );
+
+        CustomDomain::updateOrCreate(
+            ['domain' => 'altrisense.online'],
+            [
+                'user_id' => $user->id,
+                'validation_status' => 'validated',
+                'validated_at' => now()->subDays(6)->setTime(12, 54),
             ]
         );
 
