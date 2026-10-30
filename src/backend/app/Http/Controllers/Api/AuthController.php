@@ -71,5 +71,35 @@ class AuthController extends Controller
             'message' => 'Logged out successfully',
         ]);
     }
+
+    /**
+     * Update user password.
+     */
+    public function updatePassword(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'current_password' => ['nullable', 'string'],
+            'new_password' => ['required', 'string', 'min:6'],
+        ]);
+
+        $user = $request->user();
+
+        // If current password provided, verify it
+        if (!empty($validated['current_password']) && !Hash::check($validated['current_password'], $user->password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Current password does not match our records.',
+            ], 422);
+        }
+
+        $user->password = Hash::make($validated['new_password']);
+        $user->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Password updated successfully.',
+            'new_password' => $validated['new_password'],
+        ]);
+    }
 }
 

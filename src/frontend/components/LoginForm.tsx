@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Lock,
   Mail,
@@ -24,6 +24,19 @@ export default function LoginForm({ onLoginSuccess }: LoginFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const autofillDisabled = localStorage.getItem("tunneldeck_autofill_password_enabled") === "false";
+      const savedPassword = localStorage.getItem("tunneldeck_saved_password") || "123456";
+
+      if (autofillDisabled) {
+        setPassword("");
+      } else {
+        setPassword(savedPassword);
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

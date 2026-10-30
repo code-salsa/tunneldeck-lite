@@ -141,6 +141,20 @@ export const api = {
     return apiRequest<{ status: string; user: User }>("/api/user");
   },
 
+  updatePassword: async (newPassword: string, currentPassword?: string) => {
+    return apiRequest<{
+      status: string;
+      message: string;
+      new_password?: string;
+    }>("/api/user/password", {
+      method: "POST",
+      body: JSON.stringify({
+        new_password: newPassword,
+        current_password: currentPassword,
+      }),
+    });
+  },
+
   getTunnels: async () => {
     return apiRequest<{
       status: string;

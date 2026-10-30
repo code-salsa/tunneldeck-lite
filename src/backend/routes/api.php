@@ -22,6 +22,7 @@ Route::get('/health', function () {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/user/password', [AuthController::class, 'updatePassword']);
 
     // Tunnel Infrastructure endpoints
     Route::get('/tunnels', [TunnelController::class, 'index']);

@@ -29,6 +29,10 @@ import {
   User as UserIcon,
   Sliders,
   CheckCircle2,
+  Key,
+  Eye,
+  EyeOff,
+  Save,
 } from "lucide-react";
 import { api, Activity, CustomDomain, Tunnel, TunnelMetrics, User } from "@/lib/api";
 import CustomDomainsView from "./CustomDomainsView";
@@ -92,6 +96,76 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
     custom_subdomain: "",
   });
   const [domainInput, setDomainInput] = useState("");
+
+  // Password Change State (Platform Settings)
+  const [currentPasswordDisplay, setCurrentPasswordDisplay] = useState("123456");
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [autofillToggle, setAutofillToggle] = useState(true);
+  const [savingPassword, setSavingPassword] = useState(false);
+  const [passwordStatusMsg, setPasswordStatusMsg] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedPw = localStorage.getItem("tunneldeck_saved_password") || "123456";
+      setCurrentPasswordDisplay(savedPw);
+      const autofillEnabled = localStorage.getItem("tunneldeck_autofill_password_enabled") !== "false";
+      setAutofillToggle(autofillEnabled);
+    }
+  }, []);
+
+  const handleSavePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordStatusMsg(null);
+
+    if (newPassword.length < 6) {
+      setPasswordStatusMsg({
+        type: "error",
+        text: "New password must be at least 6 characters long.",
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordStatusMsg({
+        type: "error",
+        text: "New password and confirmation do not match.",
+      });
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await api.updatePassword(newPassword, currentPasswordDisplay);
+
+      // Save in localStorage for UI & login page autofill
+      if (typeof window !== "undefined") {
+        localStorage.setItem("tunneldeck_saved_password", newPassword);
+        localStorage.setItem("tunneldeck_autofill_password_enabled", autofillToggle ? "true" : "false");
+      }
+
+      setCurrentPasswordDisplay(newPassword);
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordStatusMsg({
+        type: "success",
+        text: "Password updated successfully! Login page autofill preferences saved.",
+      });
+    } catch (err) {
+      setPasswordStatusMsg({
+        type: "error",
+        text: err instanceof Error ? err.message : "Failed to update password.",
+      });
+    } finally {
+      setSavingPassword(false);
+    }
+  };
 
   const fetchData = async () => {
     try {
@@ -802,94 +876,262 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
           {/* 4. SETTINGS TAB */}
           {activeTab === "settings" && (
-            <div className="space-y-6 max-w-4xl">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm space-y-6">
-                <div>
-                  <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                    Platform Settings
-                  </h2>
-                  <p className="text-sm text-slate-500 mt-1">
-                    System configuration, binary paths, and credentials management
-                  </p>
-                </div>
+            <div className="space-y-6 w-full max-w-7xl">
+              <div>
+                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">
+                  Platform Settings
+                </h2>
+                <p className="text-sm text-slate-500 mt-1">
+                  System configuration, binary paths, credentials &amp; security management
+                </p>
+              </div>
 
-                {/* Profile Card */}
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <UserIcon className="w-3.5 h-3.5 text-[#100091]" />
-                    <span>Administrator Account</span>
-                  </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div>
-                      <span className="text-slate-400 block mb-0.5">Account Name</span>
-                      <span className="font-semibold text-slate-900">{user.name}</span>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
+                {/* Left Column: Platform Configuration (7 cols on lg/xl) */}
+                <div className="lg:col-span-7 xl:col-span-7 space-y-6 w-full">
+                  <div className="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                    {/* Profile Card */}
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <UserIcon className="w-3.5 h-3.5 text-[#100091]" />
+                        <span>Administrator Account</span>
+                      </h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Account Name</span>
+                          <span className="font-semibold text-slate-900">{user.name}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Primary Email</span>
+                          <span className="font-semibold text-slate-900">{user.email}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Role</span>
+                          <span className="inline-flex px-2 py-0.5 rounded bg-indigo-50 text-[#100091] font-semibold text-[11px] border border-indigo-200">
+                            Super Administrator
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-400 block mb-0.5">Authentication Mode</span>
+                          <span className="text-slate-700 font-medium">Direct SQLite (No OTP)</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block mb-0.5">Primary Email</span>
-                      <span className="font-semibold text-slate-900">{user.email}</span>
+
+                    {/* Engine Configuration */}
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sliders className="w-3.5 h-3.5 text-[#100091]" />
+                        <span>Tunneling Engine Details</span>
+                      </h4>
+                      <div className="space-y-3 text-xs">
+                        <div>
+                          <span className="text-slate-400 block mb-1">Bundled Binary</span>
+                          <code className="px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-slate-800 font-mono text-[11px] block overflow-x-auto">
+                            src/backend/bin/windows/x64/cloudflared.exe (v2026.7)
+                          </code>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <span className="text-slate-400 block mb-0.5">Process Timeout</span>
+                            <span className="font-semibold text-slate-800">30 seconds</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block mb-0.5">Auto-Restart</span>
+                            <span className="font-semibold text-emerald-600">Enabled</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 block mb-0.5">Max Active Tunnels</span>
+                            <span className="font-semibold text-slate-800">50</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block mb-0.5">Role</span>
-                      <span className="inline-flex px-2 py-0.5 rounded bg-indigo-50 text-[#100091] font-semibold text-[11px] border border-indigo-200">
-                        Super Administrator
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-slate-400 block mb-0.5">Authentication Mode</span>
-                      <span className="text-slate-700 font-medium">Direct SQLite (No OTP)</span>
+
+                    {/* SQLite Database */}
+                    <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Database className="w-3.5 h-3.5 text-[#100091]" />
+                        <span>Database Engine</span>
+                      </h4>
+                      <div className="text-xs space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">Driver:</span>
+                          <span className="font-mono font-semibold text-slate-800">SQLite v3</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-400">Storage File:</span>
+                          <span className="font-mono text-slate-700">database/database.sqlite</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-emerald-600 font-medium pt-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Migrations up to date • Healthy</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Engine Configuration */}
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sliders className="w-3.5 h-3.5 text-[#100091]" />
-                    <span>Tunneling Engine Details</span>
-                  </h4>
-                  <div className="space-y-3 text-xs">
-                    <div>
-                      <span className="text-slate-400 block mb-1">Bundled Binary</span>
-                      <code className="px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-slate-800 font-mono text-[11px] block overflow-x-auto">
-                        src/backend/bin/windows/x64/cloudflared.exe (v2026.7)
-                      </code>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <span className="text-slate-400 block mb-0.5">Process Timeout</span>
-                        <span className="font-semibold text-slate-800">30 seconds</span>
+                {/* Right Sidebar: Change Password (5 cols on lg/xl) */}
+                <div className="lg:col-span-5 xl:col-span-5 w-full space-y-4 lg:sticky lg:top-6">
+                  <div className="bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-6 space-y-5 w-full">
+                    {/* Header */}
+                    <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#100091] shadow-2xs">
+                        <Key className="w-5 h-5" />
                       </div>
                       <div>
-                        <span className="text-slate-400 block mb-0.5">Auto-Restart</span>
-                        <span className="font-semibold text-emerald-600">Enabled</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 block mb-0.5">Max Active Tunnels</span>
-                        <span className="font-semibold text-slate-800">50</span>
+                        <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
+                          Change Password
+                        </h3>
+                        <p className="text-[11px] text-slate-400">
+                          Update your login credentials
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* SQLite Database */}
-                <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
-                  <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Database className="w-3.5 h-3.5 text-[#100091]" />
-                    <span>Database Engine</span>
-                  </h4>
-                  <div className="text-xs space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Driver:</span>
-                      <span className="font-mono font-semibold text-slate-800">SQLite v3</span>
+                    {/* Show current password box */}
+                    <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-500 font-medium">Your current password:</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="text-[#100091] hover:text-[#0b0068] text-[11px] font-semibold transition cursor-pointer flex items-center gap-1"
+                        >
+                          {showCurrentPassword ? (
+                            <>
+                              <EyeOff className="w-3.5 h-3.5" />
+                              <span>Hide</span>
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Show</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                      <div className="font-mono text-sm font-bold text-slate-900 bg-white border border-slate-200 px-3 py-1.5 rounded-lg flex items-center justify-between">
+                        <span>{showCurrentPassword ? currentPasswordDisplay : "••••••••"}</span>
+                        <span className="text-[10px] text-slate-400 font-sans font-medium uppercase tracking-wider bg-slate-100 px-1.5 py-0.5 rounded">
+                          Active
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-slate-400">Storage File:</span>
-                      <span className="font-mono text-slate-700">database/database.sqlite</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-emerald-600 font-medium pt-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      <span>Migrations up to date • Healthy</span>
-                    </div>
+
+                    {/* Status notification */}
+                    {passwordStatusMsg && (
+                      <div
+                        className={`p-3 rounded-xl text-xs flex items-start gap-2 ${
+                          passwordStatusMsg.type === "success"
+                            ? "bg-emerald-50 border border-emerald-200 text-emerald-700"
+                            : "bg-rose-50 border border-rose-200 text-rose-700"
+                        }`}
+                      >
+                        {passwordStatusMsg.type === "success" ? (
+                          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" />
+                        ) : (
+                          <X className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                        )}
+                        <span>{passwordStatusMsg.text}</span>
+                      </div>
+                    )}
+
+                    {/* Change password form */}
+                    <form onSubmit={handleSavePassword} className="space-y-4">
+                      {/* Enter new password */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Enter New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showNewPassword ? "text" : "password"}
+                            required
+                            minLength={6}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            placeholder="Enter at least 6 characters"
+                            className="w-full px-3.5 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] transition"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition"
+                          >
+                            {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Confirm new password */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                          Confirm New Password
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            required
+                            minLength={6}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            placeholder="Re-enter your new password"
+                            className="w-full px-3.5 pr-10 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] transition"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 transition"
+                          >
+                            {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Toggle for login page autofill */}
+                      <div className="pt-1 pb-1">
+                        <label className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/80 cursor-pointer select-none hover:bg-slate-100/60 transition">
+                          <div className="relative inline-flex items-center shrink-0 mt-0.5">
+                            <input
+                              type="checkbox"
+                              checked={autofillToggle}
+                              onChange={(e) => setAutofillToggle(e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#100091]"></div>
+                          </div>
+                          <div className="space-y-0.5 text-left">
+                            <span className="block text-xs font-bold text-slate-800">
+                              Autofill in login page password field
+                            </span>
+                            <span className="block text-[11px] text-slate-500 leading-relaxed">
+                              When enabled, your password is automatically filled when visiting the login page.
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+
+                      {/* Save button */}
+                      <button
+                        type="submit"
+                        disabled={savingPassword}
+                        className="w-full py-2.5 px-4 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-bold text-xs shadow-md shadow-[#100091]/25 transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                      >
+                        {savingPassword ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>Saving Changes...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Save className="w-4 h-4" />
+                            <span>Save Password</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
                   </div>
                 </div>
               </div>
