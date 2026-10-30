@@ -191,6 +191,17 @@ export const api = {
     });
   },
 
+  updateTunnel: async (id: number, payload: { name: string; port: number }) => {
+    return apiRequest<{
+      status: string;
+      tunnel: Tunnel;
+      message: string;
+    }>(`/api/tunnels/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    });
+  },
+
   startTunnel: async (id: number) => {
     return apiRequest<{
       status: string;

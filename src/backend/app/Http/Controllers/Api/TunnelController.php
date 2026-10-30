@@ -223,6 +223,28 @@ class TunnelController extends Controller
     }
 
     /**
+     * Update an existing tunnel configuration.
+     */
+    public function update(Request $request, Tunnel $tunnel): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100', 'unique:tunnels,name,' . $tunnel->id],
+            'port' => ['required', 'integer', 'min:1', 'max:65535', 'unique:tunnels,port,' . $tunnel->id],
+        ]);
+
+        $tunnel->update([
+            'name' => $validated['name'],
+            'port' => (int) $validated['port'],
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Tunnel updated successfully.',
+            'tunnel' => $tunnel,
+        ]);
+    }
+
+    /**
      * Delete a tunnel.
      */
     public function destroy(Tunnel $tunnel): JsonResponse

@@ -33,6 +33,9 @@ import {
   Eye,
   EyeOff,
   Save,
+  PlusCircle,
+  Pencil,
+  Clipboard,
 } from "lucide-react";
 import { api, Activity, CustomDomain, Tunnel, TunnelMetrics, User } from "@/lib/api";
 import CustomDomainsView from "./CustomDomainsView";
@@ -93,10 +96,22 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
   const [tunnelToDelete, setTunnelToDelete] = useState<Tunnel | null>(null);
   const [deletingTunnel, setDeletingTunnel] = useState(false);
 
+  // Edit Tunnel Modal
+  const [editingTunnel, setEditingTunnel] = useState<Tunnel | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", port: 3000 });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  // Toast Notification
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   // Form states
-  const [tunnelForm, setTunnelForm] = useState({
+  const [tunnelForm, setTunnelForm] = useState<{
+    name: string;
+    port: number | string;
+    custom_subdomain: string;
+  }>({
     name: "",
-    port: 3000,
+    port: "",
     custom_subdomain: "",
   });
   const [domainInput, setDomainInput] = useState("");
@@ -264,6 +279,10 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       await api.deleteTunnel(tunnelToDelete.id);
       setTunnelToDelete(null);
       await fetchData();
+      setToastMessage("Tunnel removed successfully.");
+      setTimeout(() => {
+        setToastMessage((prev) => (prev === "Tunnel removed successfully." ? null : prev));
+      }, 4000);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to delete tunnel");
     } finally {
@@ -273,24 +292,74 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
 
   const handleCreateTunnel = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!tunnelForm.name.trim() || !tunnelForm.port) return;
     setCreatingTunnel(true);
     try {
       await api.createTunnel({
-        name: tunnelForm.name,
+        name: tunnelForm.name.trim(),
         port: Number(tunnelForm.port),
-        custom_subdomain: tunnelForm.custom_subdomain || undefined,
       });
       setIsTunnelModalOpen(false);
       setTunnelForm({
         name: "",
-        port: 3000,
+        port: "",
         custom_subdomain: "",
       });
       await fetchData();
+
+      // Trigger toast notification matching user request
+      setToastMessage("Tunnel added successfully.");
+      setTimeout(() => {
+        setToastMessage((prev) => (prev === "Tunnel added successfully." ? null : prev));
+      }, 4000);
     } catch (err: unknown) {
       alert(err instanceof Error ? err.message : "Failed to create tunnel");
     } finally {
       setCreatingTunnel(false);
+    }
+  };
+
+  const handleOpenEditTunnel = (tunnel: Tunnel) => {
+    setEditingTunnel(tunnel);
+    setEditForm({
+      name: tunnel.name,
+      port: tunnel.port,
+    });
+  };
+
+  const handleSaveEditTunnel = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTunnel || !editForm.name.trim() || !editForm.port) return;
+    setSavingEdit(true);
+    try {
+      await api.updateTunnel(editingTunnel.id, {
+        name: editForm.name.trim(),
+        port: Number(editForm.port),
+      });
+      setEditingTunnel(null);
+      await fetchData();
+      setToastMessage("Tunnel updated successfully.");
+      setTimeout(() => {
+        setToastMessage((prev) => (prev === "Tunnel updated successfully." ? null : prev));
+      }, 4000);
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : "Failed to update tunnel");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  const formatCreatedDate = (dateStr?: string | null) => {
+    if (!dateStr) return "31 Oct 2026";
+    try {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return dateStr;
     }
   };
 
@@ -689,6 +758,7 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
           {/* 2. TUNNELS TAB */}
           {activeTab === "tunnels" && (
             <div className="space-y-6">
+              {/* Header */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
                 <div>
                   <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
@@ -699,24 +769,17 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setIsTunnelModalOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-semibold shadow-md shadow-[#100091]/25 transition flex items-center gap-2 cursor-pointer shrink-0"
+                  className="px-4 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-semibold shadow-md shadow-[#100091]/25 transition flex items-center gap-2 cursor-pointer shrink-0"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Create Tunnel</span>
+                  <span>Add New Tunnel</span>
                 </button>
               </div>
 
-              {/* Full Tunnels List */}
+              {/* Tunnels Table Container matching Screenshot 2 */}
               <div className="bg-white border border-slate-200/90 rounded-2xl overflow-hidden shadow-sm">
-                <div className="px-6 py-4 border-b border-slate-200/80 bg-slate-50/70 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Server className="w-4 h-4 text-[#100091]" />
-                    <h3 className="font-bold text-slate-900 text-sm">Configured Tunnels</h3>
-                  </div>
-                  <span className="text-xs font-medium text-slate-500">{tunnels.length} Registered</span>
-                </div>
-
                 {loading ? (
                   <div className="py-16 text-center text-slate-500 text-sm">
                     <div className="w-6 h-6 border-2 border-[#100091] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
@@ -724,143 +787,195 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
                   </div>
                 ) : tunnels.length === 0 ? (
                   <div className="py-16 text-center text-slate-500 text-sm">
-                    <p>No tunnels registered yet.</p>
+                    <p className="font-medium text-slate-700">No tunnels registered yet.</p>
+                    <p className="text-xs text-slate-400 mt-1">Create your first forwarding tunnel to expose local ports.</p>
                     <button
+                      type="button"
                       onClick={() => setIsTunnelModalOpen(true)}
-                      className="mt-3 text-[#100091] font-semibold hover:underline text-xs"
+                      className="mt-4 px-4 py-2 rounded-xl bg-[#100091] text-white text-xs font-semibold hover:bg-[#0b0068] shadow-sm transition cursor-pointer"
                     >
-                      + Create your first tunnel
+                      + Add New Tunnel
                     </button>
                   </div>
                 ) : (
-                  <div className="divide-y divide-slate-100">
-                    {tunnels.map((tunnel) => {
-                      const isOperating = actionLoadingId === tunnel.id;
-                      const isRunning = tunnel.status === "running";
-                      const isStarting = tunnel.status === "starting" || isOperating;
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-200/80 bg-slate-50/70">
+                          <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            STATUS
+                          </th>
+                          <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            TUNNEL NAME
+                          </th>
+                          <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            LOCAL URL
+                          </th>
+                          <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            PUBLIC URL
+                          </th>
+                          <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            CREATED DATE
+                          </th>
+                          <th className="py-3.5 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right">
+                            ACTIONS
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {tunnels.map((tunnel) => {
+                          const isOperating = actionLoadingId === tunnel.id;
+                          const isRunning = tunnel.status === "running";
+                          const isStarting = tunnel.status === "starting" || isOperating;
 
-                      return (
-                        <div
-                          key={tunnel.id}
-                          className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/70 transition"
-                        >
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center gap-2.5 flex-wrap">
-                              <span className="font-bold text-slate-900 text-sm">{tunnel.name}</span>
+                          return (
+                            <tr
+                              key={tunnel.id}
+                              className="hover:bg-slate-50/80 transition group"
+                            >
+                              {/* 1. STATUS */}
+                              <td className="py-4 px-6 whitespace-nowrap">
+                                {isRunning ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    <span>Running</span>
+                                  </span>
+                                ) : isStarting ? (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-ping" />
+                                    <span>{actionText || "Starting..."}</span>
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100/90 text-slate-600 border border-slate-200">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
+                                    <span>Stopped</span>
+                                  </span>
+                                )}
+                              </td>
 
-                              {/* Status Badge */}
-                              <span
-                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 ${
-                                  isRunning
-                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                    : isStarting
-                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                                    : "bg-slate-100 text-slate-600 border border-slate-200"
-                                }`}
-                              >
-                                <span
-                                  className={`w-1.5 h-1.5 rounded-full ${
-                                    isRunning
-                                      ? "bg-emerald-500 animate-pulse"
-                                      : isStarting
-                                      ? "bg-blue-500 animate-ping"
-                                      : "bg-slate-400"
-                                  }`}
-                                />
-                                {isOperating ? actionText : tunnel.status}
-                              </span>
+                              {/* 2. TUNNEL NAME */}
+                              <td className="py-4 px-6 font-bold text-slate-900 text-sm whitespace-nowrap">
+                                {tunnel.name}
+                              </td>
 
-                              {tunnel.pid && (
-                                <span className="text-[10px] text-slate-500 font-mono px-1.5 py-0.2 rounded bg-slate-100 border border-slate-200">
-                                  PID: {tunnel.pid}
-                                </span>
-                              )}
-                            </div>
-
-                            <div className="flex flex-wrap items-center gap-3 text-xs">
-                              {tunnel.public_url ? (
-                                <div className="flex items-center gap-1.5 text-[#100091] font-mono bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-100 font-medium">
-                                  <Globe className="w-3.5 h-3.5 text-[#100091]" />
-                                  <a
-                                    href={tunnel.public_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="hover:underline flex items-center gap-1"
-                                  >
-                                    <span>{tunnel.public_url}</span>
-                                    <ExternalLink className="w-3 h-3 text-slate-400" />
-                                  </a>
+                              {/* 3. LOCAL URL */}
+                              <td className="py-4 px-6 whitespace-nowrap">
+                                <div className="inline-flex items-center gap-2">
+                                  <span className="px-3 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-xs font-mono text-slate-700">
+                                    http://localhost:{tunnel.port}
+                                  </span>
                                   <button
-                                    onClick={() => handleCopy(tunnel.id, tunnel.public_url!)}
-                                    className="hover:text-slate-900 transition ml-1 text-slate-400"
-                                    title="Copy Public URL"
+                                    type="button"
+                                    onClick={() =>
+                                      handleCopy(tunnel.id, `http://localhost:${tunnel.port}`)
+                                    }
+                                    className="p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+                                    title="Copy Local URL"
                                   >
                                     {copiedId === tunnel.id ? (
-                                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                      <Check className="w-4 h-4 text-emerald-600" />
                                     ) : (
-                                      <Copy className="w-3.5 h-3.5" />
+                                      <Clipboard className="w-4 h-4" />
                                     )}
                                   </button>
                                 </div>
-                              ) : (
-                                <span className="text-xs text-slate-400 italic">
-                                  (Offline • Click Start to generate live Cloudflare URL)
-                                </span>
-                              )}
+                              </td>
 
-                              <span className="text-slate-300 font-bold">→</span>
+                              {/* 4. PUBLIC URL */}
+                              <td className="py-4 px-6 whitespace-nowrap">
+                                {isRunning && tunnel.public_url ? (
+                                  <div className="inline-flex items-center gap-2">
+                                    <a
+                                      href={tunnel.public_url}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="text-xs font-mono text-[#100091] hover:underline flex items-center gap-1 font-medium max-w-xs truncate"
+                                    >
+                                      <span>{tunnel.public_url}</span>
+                                      <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                    </a>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleCopy(tunnel.id + 100000, tunnel.public_url!)
+                                      }
+                                      className="p-1 text-slate-400 hover:text-slate-600 transition cursor-pointer shrink-0"
+                                      title="Copy Public URL"
+                                    >
+                                      {copiedId === tunnel.id + 100000 ? (
+                                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="w-3.5 h-3.5" />
+                                      )}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-slate-500 font-normal">
+                                    Not Running
+                                  </span>
+                                )}
+                              </td>
 
-                              <div className="text-slate-700 font-mono bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200">
-                                http://127.0.0.1:{tunnel.port}
-                              </div>
-                            </div>
-                          </div>
+                              {/* 5. CREATED DATE */}
+                              <td className="py-4 px-6 text-xs text-slate-600 whitespace-nowrap">
+                                {formatCreatedDate(tunnel.created_at)}
+                              </td>
 
-                          {/* Actions */}
-                          <div className="flex items-center gap-2 shrink-0">
-                            {isRunning ? (
-                              <>
-                                <button
-                                  onClick={() => handleStopTunnel(tunnel)}
-                                  disabled={isOperating}
-                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-                                >
-                                  <Pause className="w-3.5 h-3.5" />
-                                  <span>Stop</span>
-                                </button>
+                              {/* 6. ACTIONS */}
+                              <td className="py-4 px-6 text-right whitespace-nowrap">
+                                <div className="inline-flex items-center justify-end gap-2">
+                                  {isRunning ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStopTunnel(tunnel)}
+                                      disabled={isOperating}
+                                      className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer disabled:opacity-50"
+                                      title="Stop Tunnel"
+                                    >
+                                      <Pause className="w-3 h-3 fill-current" />
+                                      <span>Stop</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleStartTunnel(tunnel)}
+                                      disabled={isOperating}
+                                      className="px-3.5 py-1.5 rounded-lg bg-[#15803d] hover:bg-[#166534] text-white text-xs font-bold flex items-center gap-1.5 shadow-2xs transition cursor-pointer disabled:opacity-50"
+                                      title="Start Tunnel"
+                                    >
+                                      <Play className="w-3 h-3 fill-current" />
+                                      <span>Start</span>
+                                    </button>
+                                  )}
 
-                                <button
-                                  onClick={() => handleRestartTunnel(tunnel)}
-                                  disabled={isOperating}
-                                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold border bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-300 transition flex items-center gap-1 cursor-pointer disabled:opacity-50"
-                                  title="Restart Tunnel"
-                                >
-                                  <RotateCw className="w-3.5 h-3.5" />
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => handleStartTunnel(tunnel)}
-                                disabled={isOperating}
-                                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold border bg-[#100091] hover:bg-[#0b0068] text-white border-transparent transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shadow-sm"
-                              >
-                                <Play className="w-3.5 h-3.5 fill-current" />
-                                <span>Start Tunnel</span>
-                              </button>
-                            )}
+                                  {/* Edit Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditTunnel(tunnel)}
+                                    disabled={isOperating}
+                                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-500 hover:text-slate-700 transition cursor-pointer disabled:opacity-50"
+                                    title="Edit Tunnel"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
 
-                            <button
-                              onClick={() => setTunnelToDelete(tunnel)}
-                              disabled={isOperating}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 border border-transparent hover:border-rose-200 transition cursor-pointer disabled:opacity-50"
-                              title="Delete Tunnel"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
+                                  {/* Delete Button */}
+                                  <button
+                                    type="button"
+                                    onClick={() => setTunnelToDelete(tunnel)}
+                                    disabled={isOperating}
+                                    className="p-1.5 rounded-lg border border-slate-200 hover:bg-rose-50 text-rose-500 hover:text-rose-600 transition cursor-pointer disabled:opacity-50"
+                                    title="Delete Tunnel"
+                                  >
+                                    <Trash2 className="w-4 h-4 stroke-[1.8]" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 )}
               </div>
@@ -1139,83 +1254,169 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
       </div>
 
       {/* ======================================================== */}
-      {/* MODAL: CREATE TUNNEL */}
+      {/* MODAL: ADD NEW TUNNEL (Matching Screenshot 1) */}
       {/* ======================================================== */}
       {isTunnelModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 relative shadow-2xl">
-            <button
-              onClick={() => setIsTunnelModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-5">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <PlusCircle className="w-5 h-5 text-blue-600 shrink-0" />
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Add New Tunnel
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsTunnelModalOpen(false)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Create Cloudflare Tunnel</h3>
-            <p className="text-xs text-slate-500 mb-5">
-              Forward a local development server port to the internet
-            </p>
-
+            {/* Modal Form */}
             <form onSubmit={handleCreateTunnel} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                   Tunnel Name
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Local Next.js App"
+                  placeholder="e.g. Dev Server"
                   value={tunnelForm.name}
                   onChange={(e) => setTunnelForm({ ...tunnelForm, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
+                  className="w-full px-3.5 py-2.5 bg-white border border-blue-400 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Local Port
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Port Number
                 </label>
                 <input
                   type="number"
                   required
                   min={1}
                   max={65535}
-                  value={tunnelForm.port}
-                  onChange={(e) => setTunnelForm({ ...tunnelForm, port: Number(e.target.value) })}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
-                />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Target local server address: http://127.0.0.1:{tunnelForm.port}
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Custom Subdomain Slug (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. my-app"
-                  value={tunnelForm.custom_subdomain}
-                  onChange={(e) => setTunnelForm({ ...tunnelForm, custom_subdomain: e.target.value })}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091]"
+                  placeholder="e.g. 3000, 8080"
+                  value={tunnelForm.port || ""}
+                  onChange={(e) =>
+                    setTunnelForm({ ...tunnelForm, port: e.target.value ? Number(e.target.value) : "" })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition"
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3">
+              {/* Modal Footer */}
+              <div className="border-t border-slate-100 pt-4 mt-6 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setIsTunnelModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-slate-500 hover:text-slate-800 text-xs font-medium transition cursor-pointer"
+                  className="px-5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={creatingTunnel}
-                  className="px-4 py-2 rounded-xl bg-[#100091] text-white text-xs font-semibold hover:bg-[#0b0068] transition shadow-md shadow-[#100091]/25 disabled:opacity-50 cursor-pointer"
+                  className="px-5 py-2 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
                 >
-                  {creatingTunnel ? "Creating..." : "Save Tunnel"}
+                  {creatingTunnel ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Adding...</span>
+                    </>
+                  ) : (
+                    <span>Add Tunnel</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: EDIT TUNNEL */}
+      {/* ======================================================== */}
+      {editingTunnel && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 relative shadow-2xl space-y-5">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <Pencil className="w-5 h-5 text-blue-600 shrink-0" />
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                  Edit Tunnel
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTunnel(null)}
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditTunnel} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Tunnel Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dev Server"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2.5 bg-white border border-blue-400 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-100 transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                  Port Number
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={1}
+                  max={65535}
+                  placeholder="e.g. 3000, 8080"
+                  value={editForm.port || ""}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, port: Number(e.target.value) })
+                  }
+                  className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 transition"
+                />
+              </div>
+
+              <div className="border-t border-slate-100 pt-4 mt-6 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingTunnel(null)}
+                  className="px-5 py-2 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-xs font-semibold transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={savingEdit}
+                  className="px-5 py-2 rounded-xl bg-[#2563eb] hover:bg-[#1d4ed8] text-white text-xs font-bold shadow-sm transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  {savingEdit ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Save Changes</span>
+                  )}
                 </button>
               </div>
             </form>
@@ -1271,6 +1472,25 @@ export default function Dashboard({ user, onLogout }: DashboardProps) {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* FLOATING TOAST NOTIFICATION */}
+      {/* ======================================================== */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 flex items-center gap-3 px-4 py-3 bg-white border border-emerald-200 text-slate-800 rounded-2xl shadow-xl shadow-slate-900/10 animate-in slide-in-from-top-3 fade-in duration-200">
+          <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-4 h-4" />
+          </div>
+          <span className="text-xs sm:text-sm font-semibold text-slate-800">{toastMessage}</span>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-slate-400 hover:text-slate-600 transition cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 

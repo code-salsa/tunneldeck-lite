@@ -28,6 +28,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tunnels', [TunnelController::class, 'index']);
     Route::get('/stats', [TunnelController::class, 'stats']);
     Route::post('/tunnels', [TunnelController::class, 'store']);
+    Route::put('/tunnels/{tunnel}', [TunnelController::class, 'update']);
     Route::post('/tunnels/{tunnel}/start', [TunnelController::class, 'start']);
     Route::post('/tunnels/{tunnel}/stop', [TunnelController::class, 'stop']);
     Route::post('/tunnels/{tunnel}/restart', [TunnelController::class, 'restart']);

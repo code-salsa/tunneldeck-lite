@@ -60,6 +60,50 @@ class TunnelTest extends TestCase
         ]);
     }
 
+    public function test_authenticated_user_can_update_tunnel(): void
+    {
+        $user = User::where('email', 'admin@tunneldeck.online')->first();
+        $tunnel = Tunnel::first();
+
+        $response = $this->actingAs($user, 'sanctum')->putJson("/api/tunnels/{$tunnel->id}", [
+            'name' => 'Renamed Dev Server',
+            'port' => 8080,
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'tunnel' => [
+                    'id' => $tunnel->id,
+                    'name' => 'Renamed Dev Server',
+                    'port' => 8080,
+                ],
+            ]);
+
+        $this->assertDatabaseHas('tunnels', [
+            'id' => $tunnel->id,
+            'name' => 'Renamed Dev Server',
+            'port' => 8080,
+        ]);
+    }
+
+    public function test_authenticated_user_can_delete_tunnel(): void
+    {
+        $user = User::where('email', 'admin@tunneldeck.online')->first();
+        $tunnel = Tunnel::first();
+
+        $response = $this->actingAs($user, 'sanctum')->deleteJson("/api/tunnels/{$tunnel->id}");
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+            ]);
+
+        $this->assertDatabaseMissing('tunnels', [
+            'id' => $tunnel->id,
+        ]);
+    }
+
     public function test_unauthenticated_request_is_blocked(): void
     {
         $response = $this->getJson('/api/tunnels');
