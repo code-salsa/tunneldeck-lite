@@ -29,6 +29,9 @@ export default function CustomDomainsView() {
   const [newDomainName, setNewDomainName] = useState("");
   const [addingDomain, setAddingDomain] = useState(false);
 
+  // Step-by-Step Guide Modal
+  const [isGuideModalOpen, setIsGuideModalOpen] = useState(false);
+
   // Validation States & Modals:
   // 'none' | 'validating' | 'failed_checklist' | 'failed_dialog' | 'success' | 'revalidate_prompt'
   const [modalState, setModalState] = useState<
@@ -324,15 +327,71 @@ export default function CustomDomainsView() {
                 <span>Loading domains...</span>
               </div>
             ) : filteredDomains.length === 0 ? (
-              <div className="py-16 text-center text-slate-500 text-sm space-y-3">
-                <p>No custom domains found.</p>
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="text-[#100091] font-semibold hover:underline text-xs"
-                >
-                  + Add a new custom domain
-                </button>
-              </div>
+              domains.length === 0 ? (
+                /* Empty state card matching user request */
+                <div className="p-8 sm:p-12 text-center max-w-lg mx-auto space-y-6">
+                  {/* Globe Icon */}
+                  <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 text-[#100091] flex items-center justify-center mx-auto shadow-2xs">
+                    <Globe className="w-8 h-8 stroke-[1.8]" />
+                  </div>
+
+                  {/* Heading & Subtitle */}
+                  <div className="space-y-2">
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight">
+                      No domains added and verified yet.
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                      First add your domain in Cloudflare (
+                      <button
+                        type="button"
+                        onClick={() => setIsGuideModalOpen(true)}
+                        className="text-[#100091] font-bold underline underline-offset-2 hover:text-[#0b0068] cursor-pointer inline-flex items-center gap-0.5"
+                      >
+                        follow a step by step guide
+                        <ExternalLink className="w-3 h-3 inline ml-0.5" />
+                      </button>
+                      ) and then add a domain here.
+                    </p>
+                  </div>
+
+                  {/* Open Guide button */}
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => setIsGuideModalOpen(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-orange-50 hover:bg-orange-100/80 text-orange-700 border border-orange-200 text-xs font-semibold transition cursor-pointer shadow-2xs"
+                    >
+                      <Cloud className="w-4 h-4 fill-current text-orange-500" />
+                      <span>Follow Step-by-Step Guide</span>
+                    </button>
+                  </div>
+
+                  {/* Ready to add section */}
+                  <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-center gap-3">
+                    <span className="text-xs text-slate-600 font-medium">
+                      Ready to add a domain?
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddModalOpen(true)}
+                      className="px-5 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-bold shadow-md shadow-[#100091]/25 transition flex items-center gap-2 cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4 stroke-[2.5]" />
+                      <span>Add Domain</span>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="py-16 text-center text-slate-500 text-sm space-y-3">
+                  <p>No domains matching &quot;{searchQuery}&quot;</p>
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="text-[#100091] font-semibold hover:underline text-xs"
+                  >
+                    Clear search filter
+                  </button>
+                </div>
+              )
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -432,7 +491,13 @@ export default function CustomDomainsView() {
                   <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
                     Connect Domain in Cloudflare
                   </h3>
-                  <p className="text-[11px] text-slate-400">Step-by-step free setup guide</p>
+                  <button
+                    type="button"
+                    onClick={() => setIsGuideModalOpen(true)}
+                    className="text-[11px] text-[#100091] hover:underline font-semibold cursor-pointer text-left block"
+                  >
+                    View detailed guide modal →
+                  </button>
                 </div>
               </div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
@@ -628,6 +693,168 @@ export default function CustomDomainsView() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* MODAL: STEP-BY-STEP CLOUDFLARE GUIDE */}
+      {/* ======================================================== */}
+      {isGuideModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative shadow-2xl space-y-6">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-orange-500 shadow-2xs shrink-0">
+                  <Cloud className="w-6 h-6 fill-current" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-extrabold text-slate-900 tracking-tight">
+                      Connect Domain in Cloudflare
+                    </h3>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                      100% Free
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Step-by-step guide to delegate your custom domain to Cloudflare for zero cost
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsGuideModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition cursor-pointer p-1 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Steps Container */}
+            <div className="space-y-4">
+              {/* Step 1 */}
+              <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex gap-3.5">
+                <div className="w-7 h-7 rounded-full bg-[#100091] text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  1
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Create a Free Cloudflare Account
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Go to{" "}
+                    <a
+                      href="https://dash.cloudflare.com/sign-up"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#100091] font-bold underline hover:text-[#0b0068] inline-flex items-center gap-0.5"
+                    >
+                      dash.cloudflare.com
+                      <ExternalLink className="w-3 h-3 inline ml-0.5" />
+                    </a>{" "}
+                    and sign up. No credit card or payment info is ever required for the free tier.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 2 */}
+              <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex gap-3.5">
+                <div className="w-7 h-7 rounded-full bg-[#100091] text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  2
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Add Your Domain &amp; Choose the Free Plan
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    In your Cloudflare dashboard, click <strong>&quot;+ Add a Site&quot;</strong>, enter your registered apex domain (e.g., <code className="bg-white border px-1.5 py-0.5 rounded text-slate-800 font-mono text-[11px]">yourdomain.com</code>), and select the <strong>Free ($0/month)</strong> plan at the bottom of the pricing options.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 3 */}
+              <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex gap-3.5">
+                <div className="w-7 h-7 rounded-full bg-[#100091] text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  3
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Review Scanned DNS Records
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Cloudflare automatically scans and imports all your domain&apos;s existing DNS records. Simply review them and click <strong>Continue</strong>.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 4 */}
+              <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex gap-3.5">
+                <div className="w-7 h-7 rounded-full bg-[#100091] text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  4
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Update Nameservers at Your Domain Registrar
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Cloudflare will display two assigned nameservers (e.g. <code className="bg-white border px-1.5 py-0.5 rounded text-slate-800 font-mono text-[11px]">xxx.ns.cloudflare.com</code>). Log in to wherever you bought the domain (GoDaddy, Namecheap, Hostinger, Squarespace, Porkbun, etc.), navigate to <strong>DNS / Custom Nameservers</strong>, and replace them with Cloudflare&apos;s two nameservers.
+                  </p>
+                </div>
+              </div>
+
+              {/* Step 5 */}
+              <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 flex gap-3.5">
+                <div className="w-7 h-7 rounded-full bg-[#100091] text-white font-extrabold text-xs flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                  5
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-bold text-slate-900 text-sm">
+                    Add &amp; Validate Your Domain in TunnelDeck
+                  </h4>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Once nameservers activate (usually 2–10 minutes), come back here, click <strong>Add Domain</strong>, and click <strong>Validate</strong>. Your custom domain is now linked and ready to route local tunnels!
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Perks Callout */}
+            <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex items-start gap-3 text-xs text-slate-700">
+              <Shield className="w-5 h-5 text-[#100091] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <h5 className="font-bold text-slate-900">What makes Cloudflare Tunnels free?</h5>
+                <p className="text-slate-600 text-[11px] leading-relaxed">
+                  Cloudflare provides Argo Tunnels and DNS zone management at no charge on the Free tier. You get automatic free SSL/TLS certificates, DDoS protection, and global edge network routing for unlimited tunnels without opening router ports.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+              <a
+                href="https://dash.cloudflare.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Open Cloudflare Dashboard</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsGuideModalOpen(false);
+                  setIsAddModalOpen(true);
+                }}
+                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-bold shadow-md shadow-[#100091]/25 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[2.5]" />
+                <span>Ready to Add Domain</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
