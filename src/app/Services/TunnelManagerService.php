@@ -130,7 +130,7 @@ class TunnelManagerService
                     $outputText = implode("\n", $checkOutput);
                     if (preg_match('/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/', $outputText, $matches)) {
                         $uuid = $matches[1];
-                        $home = \App\Services\DomainValidationService::getHomeDir();
+                        $home = self::getHomeDir();
                         $credPath = $home . DIRECTORY_SEPARATOR . '.cloudflared' . DIRECTORY_SEPARATOR . $uuid . '.json';
                         if (file_exists($credPath)) {
                             $hasLocalCert = true;
@@ -225,7 +225,7 @@ class TunnelManagerService
                 }
             }
 
-            $home = \App\Services\DomainValidationService::getHomeDir();
+            $home = self::getHomeDir();
             $credPath = $home . DIRECTORY_SEPARATOR . '.cloudflared' . DIRECTORY_SEPARATOR . $uuid . '.json';
 
             // Generate a temporary yaml config file
@@ -597,5 +597,26 @@ class TunnelManagerService
         } catch (\Exception $e) {
             Log::channel('tunnels')->error("TunnelManagerService: Error deleting named tunnel from Cloudflare: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Get user's home directory in a cross-platform way.
+     */
+    public static function getHomeDir(): string
+    {
+        $home = getenv('HOME');
+        if (!empty($home)) {
+            return rtrim($home, '/\\');
+        }
+        $userProfile = getenv('USERPROFILE');
+        if (!empty($userProfile)) {
+            return rtrim($userProfile, '/\\');
+        }
+        $homeDrive = getenv('HOMEDRIVE');
+        $homePath = getenv('HOMEPATH');
+        if (!empty($homeDrive) && !empty($homePath)) {
+            return rtrim($homeDrive . $homePath, '/\\');
+        }
+        return '/Users/apple';
     }
 }

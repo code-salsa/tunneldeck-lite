@@ -77,6 +77,6 @@ class User extends Authenticatable
 
     public function customDomains()
     {
-        return $this->hasMany(CustomDomain::class);
+        return class_exists(CustomDomain::class) ? $this->hasMany(CustomDomain::class) : null;
     }
 }

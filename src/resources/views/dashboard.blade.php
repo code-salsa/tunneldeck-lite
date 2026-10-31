@@ -63,10 +63,12 @@
                     <span class="nav-label truncate">Tunnels</span>
                 </button>
 
+                @if(view()->exists('partials.domains_tab'))
                 <button type="button" onclick="switchTab('domains')" id="nav-btn-domains" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
                     <i data-lucide="globe" class="w-4 h-4 shrink-0"></i>
                     <span class="nav-label truncate">Domains</span>
                 </button>
+                @endif
 
                 <button type="button" onclick="switchTab('settings')" id="nav-btn-settings" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition cursor-pointer text-slate-600 hover:text-slate-900 hover:bg-slate-100/80">
                     <i data-lucide="settings" class="w-4 h-4 shrink-0"></i>
@@ -323,149 +325,11 @@
             </div>
 
             <!-- ======================================================== -->
-            <!-- 3. CUSTOM DOMAINS TAB CONTENT -->
+            <!-- 3. CUSTOM DOMAINS TAB CONTENT (PRO ADDON) -->
             <!-- ======================================================== -->
-            <div id="tab-content-domains" class="hidden w-full">
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start w-full">
-                    <!-- LEFT COLUMN: Header, Search & Table -->
-                    <div class="lg:col-span-7 xl:col-span-7 2xl:col-span-7 space-y-6 w-full">
-                        <!-- Header Section -->
-                        <div class="w-full">
-                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight font-sans">Custom Domains</h1>
-                            <p class="text-sm text-slate-500 mt-1">Configure and validate custom domains to route your local tunnels.</p>
-                        </div>
-
-                        <!-- Search and Add Domain Bar -->
-                        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                            <div class="relative flex-1">
-                                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                                    <i data-lucide="search" class="w-4 h-4"></i>
-                                </div>
-                                <input
-                                    type="text"
-                                    id="domain-search-input"
-                                    oninput="filterDomainsList(this.value)"
-                                    placeholder="Search custom domains..."
-                                    class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200/90 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] shadow-2xs transition"
-                                >
-                            </div>
-
-                            <button type="button" onclick="openAddDomainModal()" class="px-5 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-sm font-semibold shadow-md shadow-[#100091]/25 transition flex items-center justify-center gap-2 cursor-pointer shrink-0">
-                                <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
-                                <span>Add Domain</span>
-                            </button>
-                        </div>
-
-                        <!-- Configured Domains Table Card -->
-                        <div class="bg-white border border-slate-200/90 rounded-2xl shadow-2xs overflow-hidden">
-                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white">
-                                <div class="flex items-center gap-2.5">
-                                    <i data-lucide="globe" class="w-4 h-4 text-blue-600 stroke-[2.2]"></i>
-                                    <h3 class="font-extrabold text-slate-900 text-sm tracking-tight">Configured Domains</h3>
-                                </div>
-                                <span id="domains-count-badge" class="text-xs font-semibold text-slate-400">{{ $domains->count() }} Domains</span>
-                            </div>
-
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr class="border-b border-slate-100 bg-slate-50/50">
-                                            <th class="py-3 px-6 font-bold text-slate-500 uppercase tracking-wider text-[11px]">DOMAIN</th>
-                                            <th class="py-3 px-6 font-bold text-slate-500 uppercase tracking-wider text-[11px]">STATUS</th>
-                                            <th class="py-3 px-6 font-bold text-slate-500 uppercase tracking-wider text-[11px]">VALIDATED AT</th>
-                                            <th class="py-3 px-6 font-bold text-slate-500 uppercase tracking-wider text-[11px] text-right">ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="domains-table-body" class="divide-y divide-slate-100">
-                                        @include('partials.domains_table_rows', ['domains' => $domains])
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- RIGHT COLUMN: Step-by-Step Free Cloudflare Guide (Starts at the top) -->
-                    <div class="lg:col-span-5 xl:col-span-5 2xl:col-span-5 w-full space-y-4 lg:sticky lg:top-6">
-                        <div class="bg-white border border-slate-200/90 rounded-2xl shadow-2xs p-5 sm:p-6 space-y-5 w-full">
-                            <!-- Guide Header -->
-                            <div class="flex items-start justify-between gap-3 border-b border-slate-100 pb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200/80 flex items-center justify-center text-orange-500 shadow-2xs">
-                                        <i data-lucide="cloud" class="w-5 h-5 fill-current"></i>
-                                    </div>
-                                    <div>
-                                        <h3 class="font-extrabold text-slate-900 text-sm tracking-tight">Connect Domain in Cloudflare</h3>
-                                        <button type="button" onclick="openGuideModal()" class="text-[11px] text-[#100091] hover:underline font-semibold cursor-pointer text-left block">
-                                            View detailed guide modal &rarr;
-                                        </button>
-                                    </div>
-                                </div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200 shrink-0">
-                                    Free Plan
-                                </span>
-                            </div>
-
-                            <!-- Steps 1 to 5 -->
-                            <div class="space-y-4 text-xs">
-                                <div class="flex gap-3">
-                                    <div class="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">1</div>
-                                    <div class="space-y-0.5">
-                                        <h4 class="font-bold text-slate-900">Sign Up / Log In to Cloudflare</h4>
-                                        <p class="text-slate-500 text-[11px] leading-relaxed">
-                                            Create a free account at <a href="https://dash.cloudflare.com/sign-up" target="_blank" rel="noreferrer" class="text-[#100091] font-semibold hover:underline">dash.cloudflare.com</a>. No credit card required.
-                                        </p>
-                                    </div>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <div class="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">2</div>
-                                    <div class="space-y-0.5">
-                                        <h4 class="font-bold text-slate-900">Add Your Domain</h4>
-                                        <p class="text-slate-500 text-[11px] leading-relaxed">Click "+ Add a Site", enter your root domain, and choose the Free ($0/month) plan.</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <div class="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">3</div>
-                                    <div class="space-y-0.5">
-                                        <h4 class="font-bold text-slate-900">Automatic DNS Records Scan</h4>
-                                        <p class="text-slate-500 text-[11px] leading-relaxed">Cloudflare scans existing records. Review and click Continue.</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <div class="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">4</div>
-                                    <div class="space-y-0.5">
-                                        <h4 class="font-bold text-slate-900">Update Nameservers at Registrar</h4>
-                                        <p class="text-slate-500 text-[11px] leading-relaxed">Log in to GoDaddy, Namecheap, Hostinger, etc. and update the 2 nameservers.</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex gap-3">
-                                    <div class="w-6 h-6 rounded-full bg-[#100091] text-white font-bold text-[11px] flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">5</div>
-                                    <div class="space-y-0.5">
-                                        <h4 class="font-bold text-slate-900">Validate in TunnelDeck</h4>
-                                        <p class="text-slate-500 text-[11px] leading-relaxed">Click Validate on the left. Cloudflared authenticates your zone automatically!</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Perks Callout -->
-                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 space-y-1.5 text-[11px]">
-                                <div class="flex items-center gap-1.5 font-bold text-slate-800">
-                                    <i data-lucide="shield" class="w-3.5 h-3.5 text-emerald-600"></i>
-                                    <span>Free Plan Includes:</span>
-                                </div>
-                                <ul class="space-y-1 text-slate-500 text-[11px] pl-4 list-disc">
-                                    <li>Automatic SSL/TLS encryption for all subdomains</li>
-                                    <li>Unlimited bandwidth for Cloudflare Tunnels</li>
-                                    <li>Global Edge CDN &amp; DDoS protection</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @if(view()->exists('partials.domains_tab'))
+                @include('partials.domains_tab')
+            @endif
 
             <!-- ======================================================== -->
             <!-- 4. PLATFORM SETTINGS TAB CONTENT -->
@@ -743,5 +607,8 @@
 
 @push('scripts')
 <script src="{{ asset('js/app.js') }}"></script>
+@if(file_exists(public_path('js/domains.js')))
+<script src="{{ asset('js/domains.js') }}"></script>
+@endif
 @endpush
 

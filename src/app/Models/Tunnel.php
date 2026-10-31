@@ -77,7 +77,7 @@ class Tunnel extends Model
      */
     public function customDomain()
     {
-        return $this->belongsTo(CustomDomain::class);
+        return class_exists(CustomDomain::class) ? $this->belongsTo(CustomDomain::class) : null;
     }
 
     public function user()

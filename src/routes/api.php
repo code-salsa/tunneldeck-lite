@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\TunnelController;
 use Illuminate\Support\Facades\Route;
 
@@ -36,11 +35,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/tunnels/{tunnel}/status', [TunnelController::class, 'status']);
     Route::delete('/tunnels/{tunnel}', [TunnelController::class, 'destroy']);
 
-    // Domain & Cloudflare validation endpoints
-    Route::get('/domains', [DomainController::class, 'index']);
-    Route::post('/domains', [DomainController::class, 'store']);
-    Route::post('/domains/{id}/validate', [DomainController::class, 'validateDomain']);
-    Route::delete('/domains/{id}', [DomainController::class, 'destroy']);
-    Route::post('/cloudflare/login', [DomainController::class, 'loginCloudflare']);
-    Route::get('/cloudflare/status', [DomainController::class, 'cloudflareStatus']);
+    // Include Pro Custom Domains API endpoints if addon is installed
+    if (file_exists(base_path('routes/domains.php')) && class_exists(\App\Http\Controllers\Api\DomainController::class)) {
+        Route::get('/domains', [\App\Http\Controllers\Api\DomainController::class, 'index']);
+        Route::post('/domains', [\App\Http\Controllers\Api\DomainController::class, 'store']);
+        Route::post('/domains/{id}/validate', [\App\Http\Controllers\Api\DomainController::class, 'validateDomain']);
+        Route::delete('/domains/{id}', [\App\Http\Controllers\Api\DomainController::class, 'destroy']);
+        Route::post('/cloudflare/login', [\App\Http\Controllers\Api\DomainController::class, 'loginCloudflare']);
+        Route::get('/cloudflare/status', [\App\Http\Controllers\Api\DomainController::class, 'cloudflareStatus']);
+    }
 });

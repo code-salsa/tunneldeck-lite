@@ -50,10 +50,12 @@ class DashboardController extends Controller
             ->limit(10)
             ->get();
 
-        $domains = CustomDomain::when($userId, fn ($q) => $q->where('user_id', $userId)->orWhereNull('user_id'))
-            ->withCount('tunnels')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        $domains = class_exists(CustomDomain::class)
+            ? CustomDomain::when($userId, fn ($q) => $q->where('user_id', $userId)->orWhereNull('user_id'))
+                ->withCount('tunnels')
+                ->orderBy('created_at', 'desc')
+                ->get()
+            : collect();
 
         return view('dashboard', [
             'user' => Auth::user(),

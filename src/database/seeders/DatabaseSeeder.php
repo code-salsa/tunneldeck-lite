@@ -47,42 +47,44 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        // Seed Domains matching the screenshot
-        CustomDomain::updateOrCreate(
-            ['domain' => 'tunneldeck.online'],
-            [
-                'user_id' => $user->id,
-                'validation_status' => 'failed',
-                'validated_at' => null,
-            ]
-        );
+        // Seed Domains matching the screenshot (if CustomDomain addon is installed)
+        if (class_exists(CustomDomain::class)) {
+            CustomDomain::updateOrCreate(
+                ['domain' => 'tunneldeck.online'],
+                [
+                    'user_id' => $user->id,
+                    'validation_status' => 'failed',
+                    'validated_at' => null,
+                ]
+            );
 
-        CustomDomain::updateOrCreate(
-            ['domain' => 'altrisign.online'],
-            [
-                'user_id' => $user->id,
-                'validation_status' => 'validated',
-                'validated_at' => now()->subDays(14)->setTime(4, 42),
-            ]
-        );
+            CustomDomain::updateOrCreate(
+                ['domain' => 'altrisign.online'],
+                [
+                    'user_id' => $user->id,
+                    'validation_status' => 'validated',
+                    'validated_at' => now()->subDays(14)->setTime(4, 42),
+                ]
+            );
 
-        CustomDomain::updateOrCreate(
-            ['domain' => 'altricampus.online'],
-            [
-                'user_id' => $user->id,
-                'validation_status' => 'validated',
-                'validated_at' => now()->subDays(14)->setTime(19, 50),
-            ]
-        );
+            CustomDomain::updateOrCreate(
+                ['domain' => 'altricampus.online'],
+                [
+                    'user_id' => $user->id,
+                    'validation_status' => 'validated',
+                    'validated_at' => now()->subDays(14)->setTime(19, 50),
+                ]
+            );
 
-        CustomDomain::updateOrCreate(
-            ['domain' => 'altrisense.online'],
-            [
-                'user_id' => $user->id,
-                'validation_status' => 'validated',
-                'validated_at' => now()->subDays(6)->setTime(12, 54),
-            ]
-        );
+            CustomDomain::updateOrCreate(
+                ['domain' => 'altrisense.online'],
+                [
+                    'user_id' => $user->id,
+                    'validation_status' => 'validated',
+                    'validated_at' => now()->subDays(6)->setTime(12, 54),
+                ]
+            );
+        }
 
         Activity::create([
             'user_id' => $user->id,
