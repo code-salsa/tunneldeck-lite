@@ -1276,6 +1276,318 @@ function closeOnboardingModal(userData) {
             const avatarEl = userCard.querySelector('.rounded-lg.bg-indigo-100');
             if (avatarEl && userData.initial) avatarEl.textContent = userData.initial;
         }
+
+        if (userData.package) {
+            updateLicenseUI(userData.package);
+        }
     }
 }
+
+/* ========================================================
+   LICENSE MANAGEMENT & LIVE DIAGNOSTIC TESTING
+   ======================================================== */
+
+function updateLicenseUI(packageTier, currency, syncedAt, maxTunnels) {
+    const tier = (packageTier || 'lite').toLowerCase();
+    const tierUpper = tier.toUpperCase();
+
+    // 1. Sidebar Badge
+    const sidebarBadge = document.getElementById('sidebar-user-package');
+    if (sidebarBadge) {
+        sidebarBadge.textContent = tierUpper;
+        if (tier === 'pro') {
+            sidebarBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300';
+        } else if (tier === 'enterprise') {
+            sidebarBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-300';
+        } else {
+            sidebarBadge.className = 'px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200';
+        }
+    }
+
+    // 2. Settings License Badge
+    const settingsBadge = document.getElementById('settings-license-badge');
+    if (settingsBadge) {
+        settingsBadge.textContent = tierUpper;
+        if (tier === 'pro') {
+            settingsBadge.className = 'inline-flex px-2 py-0.5 rounded text-xs font-extrabold uppercase bg-amber-100 text-amber-800 border border-amber-300';
+        } else if (tier === 'enterprise') {
+            settingsBadge.className = 'inline-flex px-2 py-0.5 rounded text-xs font-extrabold uppercase bg-purple-100 text-purple-800 border border-purple-300';
+        } else {
+            settingsBadge.className = 'inline-flex px-2 py-0.5 rounded text-xs font-extrabold uppercase bg-indigo-50 text-indigo-700 border border-indigo-200';
+        }
+    }
+
+    // 3. Max Tunnels Calculation
+    const calculatedMax = maxTunnels || (tier === 'enterprise' ? 500 : (tier === 'pro' ? 50 : 10));
+    const tunnelsLabel = document.getElementById('settings-license-tunnels');
+    if (tunnelsLabel) {
+        tunnelsLabel.textContent = `${calculatedMax} Concurrent`;
+    }
+    const maxTunnelsEngine = document.getElementById('settings-max-tunnels');
+    if (maxTunnelsEngine) {
+        maxTunnelsEngine.textContent = calculatedMax;
+    }
+
+    // 4. Currency
+    if (currency) {
+        const curEl = document.getElementById('settings-license-currency');
+        if (curEl) curEl.textContent = currency;
+    }
+
+    // 5. Synced At
+    if (syncedAt) {
+        const syncEl = document.getElementById('settings-license-synced-at');
+        if (syncEl) syncEl.textContent = 'Just now';
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+async function syncLicenseFromCloud(btn) {
+    const originalHtml = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i><span>Syncing...</span>';
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    try {
+        const res = await fetch('/api/license/sync', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+            }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            updateLicenseUI(data.package, data.currency, data.synced_at);
+            showToast(`License synced successfully! Plan: ${data.package.toUpperCase()}`, 'success');
+        } else {
+            showToast(data.message || 'Failed to synchronize license.', 'error');
+        }
+    } catch (err) {
+        console.error('License sync error:', err);
+        showToast('Network error while syncing license.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+}
+
+async function testPlanUpgrade(toPackage, btn) {
+    const originalText = btn ? btn.textContent : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3 h-3 animate-spin inline-block mr-1"></i>...';
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    try {
+        const res = await fetch('/api/license/upgrade-test', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            },
+            body: JSON.stringify({
+                to_package: toPackage
+            })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+            updateLicenseUI(data.package, data.sync_result?.currency, data.sync_result?.synced_at);
+            showToast(`Upgraded to ${toPackage.toUpperCase()} and synced from licensing cloud!`, 'success');
+        } else {
+            showToast(data.message || 'Upgrade simulation failed.', 'error');
+        }
+    } catch (err) {
+        console.error('Upgrade test error:', err);
+        showToast('Network error during upgrade test.', 'error');
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+}
+
+function openLicenseDiagnosticModal() {
+    openModal('modal-license-diagnostic');
+    // Auto-run if empty or first opened
+    const stepsContainer = document.getElementById('diagnostic-steps-container');
+    if (stepsContainer && stepsContainer.querySelector('#diagnostic-empty-placeholder')) {
+        runLicenseDiagnosticFlow();
+    }
+}
+
+async function runLicenseDiagnosticFlow(btn) {
+    const btnModal = document.getElementById('btn-run-diagnostic-modal');
+    const targetBtn = btn || btnModal;
+    const originalHtml = targetBtn ? targetBtn.innerHTML : '';
+
+    if (targetBtn) {
+        targetBtn.disabled = true;
+        targetBtn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i><span>Running Diagnostic...</span>';
+    }
+
+    const overallPill = document.getElementById('diagnostic-overall-pill');
+    const headerBadge = document.getElementById('diagnostic-header-badge');
+    const container = document.getElementById('diagnostic-steps-container');
+    const timerLabel = document.getElementById('diagnostic-timer-label');
+
+    if (overallPill) {
+        overallPill.className = 'px-2.5 py-1 rounded-lg font-bold text-[11px] bg-blue-100 text-blue-800 animate-pulse';
+        overallPill.textContent = 'Executing 5 Steps...';
+    }
+    if (headerBadge) {
+        headerBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200';
+        headerBadge.textContent = 'In Progress';
+    }
+
+    if (container) {
+        container.innerHTML = `
+            <div class="py-10 text-center space-y-3">
+                <div class="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-100 text-[#100091] flex items-center justify-center mx-auto">
+                    <i data-lucide="refresh-cw" class="w-5 h-5 animate-spin"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-800">Testing Endpoints Live</h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Contacting https://licensing.tunneldeck.online API...</p>
+                </div>
+            </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+    }
+
+    const startTime = performance.now();
+
+    try {
+        const res = await fetch('/api/license/test-flow', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': getCsrfToken(),
+            }
+        });
+        const elapsed = Math.round(performance.now() - startTime);
+        const data = await res.json();
+
+        if (timerLabel) {
+            timerLabel.textContent = `Total time: ${elapsed}ms`;
+        }
+
+        if (res.ok && data.steps) {
+            renderDiagnosticSteps(data.steps, data.all_passed, elapsed);
+            if (data.all_passed) {
+                if (overallPill) {
+                    overallPill.className = 'px-2.5 py-1 rounded-lg font-bold text-[11px] bg-emerald-100 text-emerald-800 border border-emerald-300';
+                    overallPill.textContent = 'All 5 Steps Passed';
+                }
+                if (headerBadge) {
+                    headerBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200';
+                    headerBadge.textContent = 'Verified Live';
+                }
+                showToast('Licensing server bidirectional test passed successfully!', 'success');
+            } else {
+                if (overallPill) {
+                    overallPill.className = 'px-2.5 py-1 rounded-lg font-bold text-[11px] bg-rose-100 text-rose-800 border border-rose-300';
+                    overallPill.textContent = 'Some Steps Failed';
+                }
+                if (headerBadge) {
+                    headerBadge.className = 'px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200';
+                    headerBadge.textContent = 'Issues Detected';
+                }
+                showToast('Some licensing steps reported errors.', 'error');
+            }
+
+            // Also sync the local UI
+            const step5 = data.steps[4];
+            if (step5 && step5.local_user_package) {
+                updateLicenseUI(step5.local_user_package);
+            }
+        } else {
+            showToast(data.message || 'Diagnostic failed to run.', 'error');
+        }
+    } catch (err) {
+        console.error('License diagnostic error:', err);
+        showToast('Network error executing diagnostic test.', 'error');
+    } finally {
+        if (targetBtn) {
+            targetBtn.disabled = false;
+            targetBtn.innerHTML = originalHtml;
+            if (window.lucide) window.lucide.createIcons();
+        }
+    }
+}
+
+function renderDiagnosticSteps(steps, allPassed, totalTime) {
+    const container = document.getElementById('diagnostic-steps-container');
+    if (!container) return;
+
+    let html = '';
+    steps.forEach((step, idx) => {
+        const isSuccess = step.success;
+        const statusBadge = isSuccess
+            ? '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 shrink-0"><i data-lucide="check" class="w-3 h-3"></i> Passed</span>'
+            : '<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200 flex items-center gap-1 shrink-0"><i data-lucide="alert-circle" class="w-3 h-3"></i> Failed</span>';
+
+        const jsonStr = JSON.stringify(step.response || step, null, 2);
+
+        html += `
+            <div class="p-3.5 rounded-xl border ${isSuccess ? 'border-slate-200 bg-white' : 'border-rose-200 bg-rose-50/30'} shadow-2xs space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="w-5 h-5 rounded-full ${isSuccess ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'} flex items-center justify-center text-[10px] font-bold shrink-0">
+                            ${idx + 1}
+                        </span>
+                        <div class="min-w-0">
+                            <h5 class="text-xs font-bold text-slate-900 truncate">${step.name}</h5>
+                            <span class="text-[10px] font-mono text-indigo-700 block truncate">${step.endpoint}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                        <span class="text-[10px] font-mono text-slate-400 font-medium">${step.duration_ms}ms &bull; HTTP ${step.status}</span>
+                        ${statusBadge}
+                    </div>
+                </div>
+
+                ${step.note ? `<p class="text-[11px] text-slate-500 italic pl-7">${step.note}</p>` : ''}
+
+                <div class="pl-7 pt-1">
+                    <button type="button" onclick="toggleDiagnosticJson(${idx})" class="text-[10px] font-semibold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition cursor-pointer">
+                        <i data-lucide="chevron-right" id="diag-chevron-${idx}" class="w-3 h-3 transition-transform"></i>
+                        <span>Inspect Cloud Response JSON</span>
+                    </button>
+                    <div id="diag-json-${idx}" class="hidden mt-2 p-2.5 rounded-lg bg-slate-900 text-slate-200 font-mono text-[10px] overflow-x-auto max-h-40 border border-slate-800 select-all">
+                        <pre>${jsonStr}</pre>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function toggleDiagnosticJson(index) {
+    const box = document.getElementById(`diag-json-${index}`);
+    const chevron = document.getElementById(`diag-chevron-${index}`);
+    if (box) {
+        const isHidden = box.classList.contains('hidden');
+        if (isHidden) {
+            box.classList.remove('hidden');
+            if (chevron) chevron.classList.add('rotate-90');
+        } else {
+            box.classList.add('hidden');
+            if (chevron) chevron.classList.remove('rotate-90');
+        }
+    }
+}
+
 

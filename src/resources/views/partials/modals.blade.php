@@ -488,3 +488,69 @@
     </div>
 </div>
 
+<!-- ======================================================== -->
+<!-- MODAL 9: LICENSING SERVER BIDIRECTIONAL DIAGNOSTIC -->
+<!-- ======================================================== -->
+<div id="modal-license-diagnostic" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
+    <div class="bg-white border border-slate-200 rounded-3xl w-full max-w-2xl p-6 sm:p-7 relative shadow-2xl space-y-5 my-8 max-h-[90vh] flex flex-col">
+        <!-- Header -->
+        <div class="flex items-start justify-between border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-11 h-11 rounded-2xl bg-indigo-50 border border-indigo-100 text-[#100091] flex items-center justify-center shadow-2xs shrink-0">
+                    <i data-lucide="shield-check" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-lg font-extrabold text-slate-900 tracking-tight">Licensing Server Diagnostic</h3>
+                        <span id="diagnostic-header-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            Ready
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Bidirectional verification with <code class="font-mono text-indigo-700 font-semibold">https://licensing.tunneldeck.online</code></p>
+                </div>
+            </div>
+            <button type="button" onclick="closeModal('modal-license-diagnostic')" class="w-8 h-8 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 flex items-center justify-center transition cursor-pointer">
+                <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+        </div>
+
+        <!-- Diagnostic Summary Banner -->
+        <div id="diagnostic-summary-card" class="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div class="space-y-0.5">
+                <span class="text-slate-400 block text-[11px] font-medium">Target Cloud Endpoint:</span>
+                <span class="font-mono font-semibold text-slate-800 break-all">https://licensing.tunneldeck.online/api/v1</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="text-slate-400 text-[11px] font-medium">Overall Status:</span>
+                <span id="diagnostic-overall-pill" class="px-2.5 py-1 rounded-lg font-bold text-[11px] bg-slate-200 text-slate-700">
+                    Idle
+                </span>
+            </div>
+        </div>
+
+        <!-- Step Results Container (Scrollable) -->
+        <div id="diagnostic-steps-container" class="space-y-3 overflow-y-auto pr-1 flex-1 min-h-[220px]">
+            <!-- Steps will be rendered here dynamically via JS -->
+            <div id="diagnostic-empty-placeholder" class="py-12 text-center space-y-2">
+                <i data-lucide="activity" class="w-8 h-8 text-slate-300 mx-auto animate-pulse"></i>
+                <p class="text-xs text-slate-500 font-medium">Click "Run Live Diagnostic" below to execute all 5 outgoing and incoming license operations.</p>
+            </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+            <span id="diagnostic-timer-label" class="text-xs text-slate-400 font-medium">Total time: --</span>
+            <div class="flex items-center gap-3">
+                <button type="button" onclick="closeModal('modal-license-diagnostic')" class="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition cursor-pointer">
+                    Close
+                </button>
+                <button type="button" id="btn-run-diagnostic-modal" onclick="runLicenseDiagnosticFlow(this)" class="px-4 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-bold transition flex items-center gap-2 shadow-sm cursor-pointer">
+                    <i data-lucide="play" class="w-3.5 h-3.5"></i>
+                    <span>Run Live Diagnostic</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+

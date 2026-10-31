@@ -80,6 +80,7 @@ class OnboardingController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'initial' => strtoupper(substr($user->name, 0, 1)),
+                'package' => $user->package ?? 'lite',
             ],
         ]);
     }
@@ -147,6 +148,7 @@ class OnboardingController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'initial' => strtoupper(substr($user->name, 0, 1)),
+                'package' => $user->package ?? 'lite',
             ],
         ]);
     }

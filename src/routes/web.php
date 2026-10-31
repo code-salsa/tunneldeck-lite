@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LicenseController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Controllers\Api\DomainController;
@@ -22,6 +23,12 @@ Route::middleware('auth')->group(function () {
     // Onboarding routes
     Route::post('/onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
     Route::post('/onboarding/explore', [OnboardingController::class, 'explore'])->name('onboarding.explore');
+
+    // License Sync, Upgrades & Diagnostic Test Flow
+    Route::get('/api/license/sync', [LicenseController::class, 'sync'])->name('license.sync');
+    Route::post('/api/license/upgrade-test', [LicenseController::class, 'upgradeTest'])->name('license.upgrade.test');
+    Route::post('/api/license/test-flow', [LicenseController::class, 'runTestFlow'])->name('license.test.flow');
+    Route::post('/api/webhook/license-update', [LicenseController::class, 'webhook']);
 
     // Tunnel AJAX routes (Web Session protected)
     Route::get('/api/tunnels', [TunnelController::class, 'index']);

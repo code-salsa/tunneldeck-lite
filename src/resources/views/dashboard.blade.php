@@ -84,7 +84,12 @@
                         {{ strtoupper(substr($user->name, 0, 1)) }}
                     </div>
                     <div class="min-w-0 nav-label">
-                        <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ $user->name }}</p>
+                        <div class="flex items-center gap-1.5">
+                            <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ $user->name }}</p>
+                            <span id="sidebar-user-package" class="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase {{ strtolower($user->package ?? 'lite') === 'pro' ? 'bg-amber-100 text-amber-800 border border-amber-300' : (strtolower($user->package ?? 'lite') === 'enterprise' ? 'bg-purple-100 text-purple-800 border border-purple-300' : 'bg-indigo-50 text-indigo-700 border border-indigo-200') }}">
+                                {{ strtoupper($user->package ?? 'lite') }}
+                            </span>
+                        </div>
                         <p class="text-[10px] text-slate-400 font-medium truncate leading-tight">{{ $user->email }}</p>
                     </div>
                 </div>
@@ -475,6 +480,77 @@
                     <!-- Left Column: Platform Configuration (7 cols) -->
                     <div class="lg:col-span-7 xl:col-span-7 space-y-6 w-full">
                         <div class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-6">
+                            <!-- License & Cloud Subscription Card -->
+                            <div class="p-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50/50 via-white to-slate-50/50 shadow-2xs space-y-4">
+                                <div class="flex items-center justify-between border-b border-indigo-100/60 pb-3">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-xl bg-indigo-100 text-[#100091] flex items-center justify-center">
+                                            <i data-lucide="shield-check" class="w-4 h-4"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">License &amp; Plan Tier</h4>
+                                            <p class="text-[11px] text-slate-500">Connected to licensing.tunneldeck.online</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                            <span>Active License</span>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Tier Info Grid -->
+                                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                    <div class="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                                        <span class="text-slate-400 block text-[11px] mb-1">Current Tier</span>
+                                        <span id="settings-license-badge" class="inline-flex px-2 py-0.5 rounded text-xs font-extrabold uppercase {{ strtolower($user->package ?? 'lite') === 'pro' ? 'bg-amber-100 text-amber-800 border border-amber-300' : (strtolower($user->package ?? 'lite') === 'enterprise' ? 'bg-purple-100 text-purple-800 border border-purple-300' : 'bg-indigo-50 text-indigo-700 border border-indigo-200') }}">
+                                            {{ strtoupper($user->package ?? 'lite') }}
+                                        </span>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                                        <span class="text-slate-400 block text-[11px] mb-1">Max Tunnels</span>
+                                        <span id="settings-license-tunnels" class="font-extrabold text-slate-900 text-xs">{{ $user->maxTunnels() }} Concurrent</span>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                                        <span class="text-slate-400 block text-[11px] mb-1">Billing Currency</span>
+                                        <span id="settings-license-currency" class="font-bold text-slate-700 text-xs">{{ $user->currency ?? 'INR' }}</span>
+                                    </div>
+                                    <div class="p-3 rounded-xl bg-white border border-slate-200/80 shadow-2xs">
+                                        <span class="text-slate-400 block text-[11px] mb-1">Last Cloud Sync</span>
+                                        <span id="settings-license-synced-at" class="font-semibold text-slate-600 text-[11px]">{{ $user->license_synced_at ? $user->license_synced_at->diffForHumans() : 'Just now' }}</span>
+                                    </div>
+                                </div>
+
+                                <!-- Actions Row -->
+                                <div class="pt-2 flex flex-wrap items-center justify-between gap-3 border-t border-indigo-100/60">
+                                    <!-- Upgrade Simulation Buttons -->
+                                    <div class="flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-[11px] font-bold text-slate-500 mr-1">Test Upgrades:</span>
+                                        <button type="button" onclick="testPlanUpgrade('lite', this)" class="px-2.5 py-1 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-semibold transition cursor-pointer">
+                                            Lite (10)
+                                        </button>
+                                        <button type="button" onclick="testPlanUpgrade('pro', this)" class="px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50/60 hover:bg-amber-100 text-amber-800 text-[11px] font-semibold transition cursor-pointer">
+                                            Pro (50)
+                                        </button>
+                                        <button type="button" onclick="testPlanUpgrade('enterprise', this)" class="px-2.5 py-1 rounded-lg border border-purple-200 bg-purple-50/60 hover:bg-purple-100 text-purple-800 text-[11px] font-semibold transition cursor-pointer">
+                                            Enterprise (500)
+                                        </button>
+                                    </div>
+
+                                    <div class="flex items-center gap-2">
+                                        <button type="button" id="btn-sync-license" onclick="syncLicenseFromCloud(this)" class="px-3 py-1.5 rounded-xl border border-indigo-200 bg-white hover:bg-indigo-50 text-indigo-700 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                            <span>Sync License</span>
+                                        </button>
+                                        <button type="button" id="btn-test-license-flow" onclick="openLicenseDiagnosticModal()" class="px-3 py-1.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-2xs">
+                                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                            <span>Test Live Flow</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Profile Card -->
                             <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
                                 <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -527,7 +603,7 @@
                                         </div>
                                         <div>
                                             <span class="text-slate-400 block mb-0.5">Max Active Tunnels</span>
-                                            <span class="font-semibold text-slate-800">50</span>
+                                            <span id="settings-max-tunnels" class="font-semibold text-slate-800">{{ $user->maxTunnels() }}</span>
                                         </div>
                                     </div>
                                 </div>

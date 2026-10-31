@@ -20,7 +20,10 @@ class User extends Authenticatable
         'role',
         'city',
         'country',
+        'package',
+        'currency',
         'is_onboarded',
+        'license_synced_at',
     ];
 
     protected $hidden = [
@@ -34,6 +37,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_onboarded' => 'boolean',
+            'license_synced_at' => 'datetime',
         ];
     }
 
@@ -49,7 +53,11 @@ class User extends Authenticatable
 
     public function maxTunnels(): int
     {
-        return 50;
+        return match(strtolower($this->package ?? 'lite')) {
+            'pro' => 50,
+            'enterprise' => 500,
+            default => 10,
+        };
     }
 
     public function domainsEnabled(): bool

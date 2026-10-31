@@ -83,5 +83,103 @@ class TunnelDeckService
             return null;
         }
     }
+
+    /**
+     * 5. Get user profile and license status from licensing server.
+     */
+    public function getUser(string $userEmailOrId): ?Response
+    {
+        try {
+            return $this->client()->get("/users/{$userEmailOrId}");
+        } catch (\Throwable $e) {
+            Log::error('TunnelDeckService getUser error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 6. Fetch user's package upgrade history.
+     */
+    public function getUserUpgrades(string $userEmailOrId): ?Response
+    {
+        try {
+            return $this->client()->get("/users/{$userEmailOrId}/upgrades");
+        } catch (\Throwable $e) {
+            Log::error('TunnelDeckService getUserUpgrades error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 7. Fetch user's access logs.
+     */
+    public function getUserAccessLogs(string $userEmailOrId): ?Response
+    {
+        try {
+            return $this->client()->get("/users/{$userEmailOrId}/access-logs");
+        } catch (\Throwable $e) {
+            Log::error('TunnelDeckService getUserAccessLogs error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 8. Fetch user's activity logs.
+     */
+    public function getUserActivityLogs(string $userEmailOrId): ?Response
+    {
+        try {
+            return $this->client()->get("/users/{$userEmailOrId}/activity-logs");
+        } catch (\Throwable $e) {
+            Log::error('TunnelDeckService getUserActivityLogs error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * 9. Synchronize user's license and package tier from cloud to local instance.
+     */
+    public function syncUserLicense(\App\Models\User $user): array
+    {
+        $response = $this->getUser($user->email);
+
+        if (!$response || !$response->successful() || !$response->json('success')) {
+            return [
+                'success' => false,
+                'message' => 'Unable to fetch license from licensing server.',
+                'package' => $user->package,
+            ];
+        }
+
+        $data = $response->json('data') ?? [];
+        $cloudPackage = $data['package'] ?? 'lite';
+        $cloudCurrency = $data['currency'] ?? null;
+        $oldPackage = $user->package;
+
+        $user->package = $cloudPackage;
+        if ($cloudCurrency) {
+            $user->currency = $cloudCurrency;
+        }
+        $user->license_synced_at = now();
+        $user->save();
+
+        if ($oldPackage !== $cloudPackage) {
+            \App\Models\Activity::create([
+                'user_id' => $user->id,
+                'description' => "Plan upgraded from {$oldPackage} to {$cloudPackage} via licensing server sync",
+                'type' => 'success',
+            ]);
+        }
+
+        return [
+            'success' => true,
+            'message' => "License synchronized successfully. Current plan: " . strtoupper($cloudPackage),
+            'package' => $cloudPackage,
+            'currency' => $cloudCurrency,
+            'upgraded' => ($oldPackage !== $cloudPackage),
+            'synced_at' => $user->license_synced_at->toIso8601String(),
+            'data' => $data,
+        ];
+    }
 }
 
