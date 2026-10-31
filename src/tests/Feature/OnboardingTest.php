@@ -125,3 +125,4 @@ class OnboardingTest extends TestCase
             ->assertJsonValidationErrors(['email']);
     }
 }
+

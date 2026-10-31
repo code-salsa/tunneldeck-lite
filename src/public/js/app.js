@@ -966,6 +966,21 @@ function renderDomainsTableRows(domains) {
 /* MULTI-STEP ONBOARDING WIZARD */
 /* ======================================================== */
 
+function getCsrfToken() {
+    const metaTag = document.querySelector('meta[name="csrf-token"]');
+    if (metaTag && metaTag.content) {
+        return metaTag.content;
+    }
+    const inputTag = document.querySelector('input[name="_token"]');
+    if (inputTag && inputTag.value) {
+        return inputTag.value;
+    }
+    if (typeof CSRF_TOKEN !== 'undefined' && CSRF_TOKEN) {
+        return CSRF_TOKEN;
+    }
+    return '';
+}
+
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -1075,7 +1090,7 @@ function goToOnboardingStep(step) {
     if (window.lucide) window.lucide.createIcons();
 }
 
-function triggerExplorePlatform() {
+async function triggerExplorePlatform(btnElement) {
     const emailInput = document.getElementById('onb-email');
     const emailError = document.getElementById('onb-email-error');
     const nameInput = document.getElementById('onb-name');
@@ -1092,44 +1107,64 @@ function triggerExplorePlatform() {
             emailError.classList.remove('hidden');
         }
         if (emailInput) {
-            emailInput.classList.add('border-rose-500');
+            emailInput.classList.remove('border-slate-300');
+            emailInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-500/20');
             emailInput.focus();
+            setTimeout(() => {
+                emailInput?.classList.remove('ring-2', 'ring-rose-500/20');
+            }, 2500);
         }
         showToast('Please enter your email to explore the platform.', 'error');
         return;
     }
 
-    // Call explore endpoint
-    fetch('/onboarding/explore', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
-        },
-        body: JSON.stringify({
-            email: emailVal,
-            name: nameInput?.value.trim() || 'Platform Explorer',
-            city: cityInput?.value.trim() || null,
-            country: countryInput?.value || null,
-        }),
-    })
-    .then(r => r.json())
-    .then(data => {
-        if (data.success) {
+    // Visual button feedback
+    const originalContent = btnElement ? btnElement.innerHTML : null;
+    if (btnElement) {
+        btnElement.disabled = true;
+        btnElement.innerHTML = '<span class="inline-block animate-spin mr-1">⏳</span> Entering exploration...';
+    }
+
+    try {
+        const token = getCsrfToken();
+        const res = await fetch('/onboarding/explore', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
+            body: JSON.stringify({
+                email: emailVal,
+                name: nameInput?.value.trim() || 'Platform Explorer',
+                city: cityInput?.value.trim() || null,
+                country: countryInput?.value || null,
+            }),
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
             closeOnboardingModal(data.user);
             showToast(data.message || 'Welcome to TunnelDeck! Exploration mode active.', 'success');
         } else {
-            showToast(data.message || 'Failed to initialize exploration mode.', 'error');
+            if (btnElement && originalContent) {
+                btnElement.disabled = false;
+                btnElement.innerHTML = originalContent;
+            }
+            const errorMsg = data.errors ? Object.values(data.errors).flat().join(' ') : (data.message || 'Failed to initialize exploration mode.');
+            showToast(errorMsg, 'error');
         }
-    })
-    .catch(err => {
+    } catch (err) {
         console.error('Explore platform error:', err);
-        showToast('Network error while initializing exploration.', 'error');
-    });
+        if (btnElement && originalContent) {
+            btnElement.disabled = false;
+            btnElement.innerHTML = originalContent;
+        }
+        showToast('Network error while connecting to server.', 'error');
+    }
 }
 
-function handleOnboardingSubmit(event) {
+async function handleOnboardingSubmit(event) {
     event.preventDefault();
 
     const nameInput = document.getElementById('onb-name');
@@ -1171,25 +1206,27 @@ function handleOnboardingSubmit(event) {
     if (submitBtn) submitBtn.disabled = true;
     if (submitText) submitText.textContent = 'Saving & Registering...';
 
-    fetch('/onboarding/complete', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-CSRF-TOKEN': getCsrfToken(),
-        },
-        body: JSON.stringify({
-            name: nameInput?.value.trim(),
-            email: emailInput?.value.trim(),
-            city: cityInput?.value.trim() || null,
-            country: countryInput?.value || null,
-            password: passwordVal,
-            password_confirmation: passwordConfVal,
-        }),
-    })
-    .then(r => r.json().then(data => ({ status: r.status, body: data })))
-    .then(({ status, body }) => {
-        if (status === 200 && body.success) {
+    try {
+        const token = getCsrfToken();
+        const res = await fetch('/onboarding/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': token,
+            },
+            body: JSON.stringify({
+                name: nameInput?.value.trim(),
+                email: emailInput?.value.trim(),
+                city: cityInput?.value.trim() || null,
+                country: countryInput?.value || null,
+                password: passwordVal,
+                password_confirmation: passwordConfVal,
+            }),
+        });
+
+        const body = await res.json();
+        if (res.ok && body.success) {
             closeOnboardingModal(body.user);
             showToast(body.message || 'Onboarding completed successfully!', 'success');
         } else {
@@ -1198,13 +1235,12 @@ function handleOnboardingSubmit(event) {
             const msg = body.errors ? Object.values(body.errors).flat().join(' ') : (body.message || 'Failed to complete onboarding.');
             showToast(msg, 'error');
         }
-    })
-    .catch(err => {
+    } catch (err) {
         console.error('Onboarding submit error:', err);
         if (submitBtn) submitBtn.disabled = false;
         if (submitText) submitText.textContent = 'Complete Setup & Launch';
         showToast('Network error during onboarding.', 'error');
-    });
+    }
 }
 
 function closeOnboardingModal(userData) {
