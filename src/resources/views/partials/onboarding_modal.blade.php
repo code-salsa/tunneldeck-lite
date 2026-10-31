@@ -123,7 +123,7 @@
             <div id="onboarding-step-2" class="space-y-4 hidden">
                 <div class="space-y-1">
                     <h3 class="text-lg font-bold text-slate-900 tracking-tight">Where are you located?</h3>
-                    <p class="text-xs text-slate-500">Used to optimize Cloudflare edge routing and automatic currency detection.</p>
+                    <p class="text-xs text-slate-500">Used to optimize Cloudflare edge routing and server connections.</p>
                 </div>
 
                 <div class="space-y-3 pt-2">
@@ -143,25 +143,19 @@
                         </label>
                         <select id="onb-country" name="country"
                             class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] transition font-medium">
-                            <option value="India" selected>India (Auto-currency: INR)</option>
-                            <option value="United States">United States (Auto-currency: USD)</option>
-                            <option value="United Kingdom">United Kingdom (USD)</option>
-                            <option value="Canada">Canada (USD)</option>
-                            <option value="Australia">Australia (USD)</option>
-                            <option value="Germany">Germany (USD)</option>
-                            <option value="France">France (USD)</option>
-                            <option value="Singapore">Singapore (USD)</option>
-                            <option value="United Arab Emirates">United Arab Emirates (USD)</option>
-                            <option value="Japan">Japan (USD)</option>
+                            <option value="India" selected>India</option>
+                            <option value="United States">United States</option>
+                            <option value="United Kingdom">United Kingdom</option>
+                            <option value="Canada">Canada</option>
+                            <option value="Australia">Australia</option>
+                            <option value="Germany">Germany</option>
+                            <option value="France">France</option>
+                            <option value="Singapore">Singapore</option>
+                            <option value="United Arab Emirates">United Arab Emirates</option>
+                            <option value="Japan">Japan</option>
                             <option value="Other">Other Country</option>
                         </select>
                     </div>
-                </div>
-
-                <!-- Currency Detection Info Box -->
-                <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center gap-2.5 text-slate-600 text-[11px]">
-                    <i data-lucide="badge-percent" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                    <span>India residents automatically receive <strong>INR</strong> pricing on package tiers; all other countries default to <strong>USD</strong>.</span>
                 </div>
 
                 <div class="pt-4 flex items-center justify-between border-t border-slate-100">
