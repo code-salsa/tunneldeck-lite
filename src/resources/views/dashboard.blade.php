@@ -461,12 +461,6 @@
                                     <li>Global Edge CDN &amp; DDoS protection</li>
                                 </ul>
                             </div>
-
-                            <!-- Open Cloudflare Button -->
-                            <a href="https://dash.cloudflare.com" target="_blank" rel="noopener noreferrer" class="w-full py-2.5 px-4 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-md shadow-[#100091]/25 cursor-pointer">
-                                <span>Open Cloudflare Dashboard</span>
-                                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                            </a>
                         </div>
                     </div>
                 </div>
