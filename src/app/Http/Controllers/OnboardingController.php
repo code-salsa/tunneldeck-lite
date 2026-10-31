@@ -41,30 +41,32 @@ class OnboardingController extends Controller
         Auth::login($user);
 
         // 2. Sync to TunnelDeck Licensing Server
-        $tunnelDeck->registerUser([
-            'name' => $user->name,
-            'email' => $user->email,
-            'city' => $user->city,
-            'country' => $user->country,
-            'package' => 'lite',
-        ]);
+        try {
+            $tunnelDeck->registerUser([
+                'name' => $user->name,
+                'email' => $user->email,
+                'city' => $user->city,
+                'country' => $user->country,
+                'package' => 'lite',
+            ]);
 
-        // 3. Record access log on licensing server
-        $tunnelDeck->logAccess($user->email, [
-            'action' => 'first_login',
-            'ip_address' => $request->ip(),
-            'device' => $request->userAgent() ?? 'Desktop Browser',
-            'status' => 'success',
-        ]);
+            $tunnelDeck->logAccess($user->email, [
+                'action' => 'first_login',
+                'ip_address' => $request->ip(),
+                'device' => $request->userAgent() ?? 'Desktop Browser',
+                'status' => 'success',
+            ]);
 
-        // 4. Record activity log on licensing server
-        $tunnelDeck->logActivity($user->email, 'onboarding_completed', "User {$user->name} completed full onboarding", [
-            'city' => $user->city,
-            'country' => $user->country,
-            'package' => 'lite',
-        ]);
+            $tunnelDeck->logActivity($user->email, 'onboarding_completed', "User {$user->name} completed full onboarding", [
+                'city' => $user->city,
+                'country' => $user->country,
+                'package' => 'lite',
+            ]);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Licensing sync during onboarding: ' . $e->getMessage());
+        }
 
-        // 5. Record local activity log
+        // 3. Record local activity log
         Activity::create([
             'user_id' => $user->id,
             'description' => "Superadmin profile initialized for {$user->name} ({$user->email})",

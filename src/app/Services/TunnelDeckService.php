@@ -22,7 +22,7 @@ class TunnelDeckService
         return Http::withToken($this->token)
             ->acceptJson()
             ->baseUrl($this->baseUrl)
-            ->timeout(10);
+            ->timeout(4);
     }
 
     /**

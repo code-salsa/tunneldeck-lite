@@ -1202,9 +1202,20 @@ async function handleOnboardingSubmit(event) {
     passwordInput?.classList.remove('border-rose-500');
     passwordConfInput?.classList.remove('border-rose-500');
 
-    // Loading state
+    // Loading state with spinner icon
+    const spinner = document.getElementById('onb-submit-spinner');
+    const submitIcon = document.getElementById('onb-submit-icon');
     if (submitBtn) submitBtn.disabled = true;
+    if (spinner) spinner.classList.remove('hidden');
+    if (submitIcon) submitIcon.classList.add('hidden');
     if (submitText) submitText.textContent = 'Saving & Registering...';
+
+    const resetSubmitBtn = () => {
+        if (submitBtn) submitBtn.disabled = false;
+        if (spinner) spinner.classList.add('hidden');
+        if (submitIcon) submitIcon.classList.remove('hidden');
+        if (submitText) submitText.textContent = 'Complete Setup & Launch';
+    };
 
     try {
         const token = getCsrfToken();
@@ -1227,18 +1238,20 @@ async function handleOnboardingSubmit(event) {
 
         const body = await res.json();
         if (res.ok && body.success) {
+            // Save updated password in localStorage for login autofill
+            if (passwordVal) {
+                localStorage.setItem('tunneldeck_saved_password', passwordVal);
+            }
             closeOnboardingModal(body.user);
             showToast(body.message || 'Onboarding completed successfully!', 'success');
         } else {
-            if (submitBtn) submitBtn.disabled = false;
-            if (submitText) submitText.textContent = 'Complete Setup & Launch';
+            resetSubmitBtn();
             const msg = body.errors ? Object.values(body.errors).flat().join(' ') : (body.message || 'Failed to complete onboarding.');
             showToast(msg, 'error');
         }
     } catch (err) {
         console.error('Onboarding submit error:', err);
-        if (submitBtn) submitBtn.disabled = false;
-        if (submitText) submitText.textContent = 'Complete Setup & Launch';
+        resetSubmitBtn();
         showToast('Network error during onboarding.', 'error');
     }
 }
