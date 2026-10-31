@@ -76,31 +76,27 @@
         </div>
 
         <!-- BOTTOM OF SIDEBAR -->
-        <div class="p-3 border-t border-slate-200/80 space-y-2">
-            <!-- User Info Card -->
-            <div id="sidebar-user-card" class="p-2.5 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between">
+        <div class="p-3 border-t border-slate-200/80">
+            <!-- User Info Card with Signout (Icon Only) in Same Row -->
+            <div id="sidebar-user-card" class="p-2 rounded-xl bg-slate-50 border border-slate-200/70 flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-100 text-[#100091] flex items-center justify-center font-bold text-xs shrink-0">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-100 text-[#100091] flex items-center justify-center font-bold text-xs shrink-0" title="{{ $user->name }} ({{ $user->email }})">
                         {{ strtoupper(substr($user->name, 0, 1)) }}
                     </div>
                     <div class="min-w-0 nav-label">
-                        <p class="text-xs font-bold text-slate-800 truncate">{{ $user->name }}</p>
-                        <p class="text-[10px] text-slate-400 font-medium truncate">{{ $user->email }}</p>
+                        <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ $user->name }}</p>
+                        <p class="text-[10px] text-slate-400 font-medium truncate leading-tight">{{ $user->email }}</p>
                     </div>
                 </div>
-                <div class="nav-label">
-                    <span class="inline-block px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">SQLite</span>
-                </div>
-            </div>
 
-            <!-- Logout Button -->
-            <form id="logout-form" method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer">
-                    <i data-lucide="log-out" class="w-4 h-4 shrink-0"></i>
-                    <span class="nav-label">Sign Out</span>
-                </button>
-            </form>
+                <!-- Sign Out Button (Icon Only) -->
+                <form id="logout-form" method="POST" action="{{ route('logout') }}" class="shrink-0 m-0">
+                    @csrf
+                    <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer flex items-center justify-center" title="Sign Out">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
+                    </button>
+                </form>
+            </div>
         </div>
     </aside>
 

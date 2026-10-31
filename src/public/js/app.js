@@ -87,14 +87,20 @@ function toggleSidebar(collapse) {
         headerExpanded?.classList.add('hidden');
         headerCollapsed?.classList.remove('hidden');
         labels.forEach(el => el.classList.add('hidden'));
-        if (userCard) userCard.classList.add('justify-center');
+        if (userCard) {
+            userCard.classList.remove('flex-row', 'justify-between');
+            userCard.classList.add('flex-col', 'justify-center', 'gap-2', 'p-1.5');
+        }
     } else {
         sidebar?.classList.remove('w-20');
         sidebar?.classList.add('w-64');
         headerExpanded?.classList.remove('hidden');
         headerCollapsed?.classList.add('hidden');
         labels.forEach(el => el.classList.remove('hidden'));
-        if (userCard) userCard.classList.remove('justify-center');
+        if (userCard) {
+            userCard.classList.remove('flex-col', 'gap-2', 'p-1.5');
+            userCard.classList.add('flex-row', 'justify-between', 'p-2');
+        }
     }
 }
 
