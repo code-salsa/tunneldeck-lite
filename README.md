@@ -1,79 +1,71 @@
 # TunnelDeck Lite
 
-A modern developer tunnel management platform built with **Laravel (Backend)** and **Next.js (Frontend)**.
+A modern, lightweight developer tunnel management platform built as a **pure Laravel application** with **native Blade views, vanilla HTML, CSS, and native JavaScript AJAX** — zero Node.js runtime required!
 
 ---
 
-## 🚀 Features
+## 🚀 Key Highlights
 
-- **Backend:** Laravel with SQLite database & Laravel Sanctum token-based authentication.
-- **Frontend:** Next.js (App Router, Tailwind CSS, TypeScript, Lucide Icons).
-- **Default Authentication:** Direct login without OTP.
+- **100% Pure Laravel:** Both frontend (Blade templates) and backend (Laravel routes & controllers) run seamlessly in a single Laravel process.
+- **Zero Node.js Dependency:** No npm, no node runtime, no Webpack/Vite build step required. Uses Tailwind CSS and Lucide Icons via high-speed CDN.
+- **Vanilla JavaScript AJAX:** Dynamic actions (tunnel starting/stopping, domain validation, deleting, password updates, filtering) use native `window.fetch()` with CSRF token authentication.
+- **SQLite Database:** Zero database setup; runs out-of-the-box with a local SQLite database file.
+- **Pre-filled Instant Login:** Direct login without OTP.
   - **Email:** `admin@tunneldeck.online`
   - **Password:** `123456`
-- **Dashboard:**
-  - Real-time tunnel status (Active / Paused / Stopped)
-  - Forwarding controls (Protocol, local port, public tunnel URLs)
-  - SQLite status & metrics overview (total tunnels, active tunnels, connection stats)
-  - One-click copy for public URLs and tunnel management modal
 
 ---
 
-## 📁 Project Structure
+## 📁 Project Architecture
 
 ```
 tunneldeck-lite/
 ├── src/
-│   ├── backend/          # Laravel SQLite API Backend
+│   ├── backend/                      # Complete Laravel Application (Frontend + Backend)
 │   │   ├── app/
-│   │   │   ├── Http/Controllers/Api/   # AuthController & TunnelController
-│   │   │   └── Models/                 # User & Tunnel models
+│   │   │   ├── Http/Controllers/
+│   │   │   │   ├── DashboardController.php   # Loads live metrics, tunnels, domains, activities
+│   │   │   │   ├── WebAuthController.php     # Session auth, login, logout, password change
+│   │   │   │   └── Api/                      # JSON API endpoints
+│   │   │   └── Models/                       # User, Tunnel, Domain, Activity models
 │   │   ├── database/
-│   │   │   ├── database.sqlite         # SQLite database file
-│   │   │   ├── migrations/             # Database migrations
-│   │   │   └── seeders/DatabaseSeeder  # Seeds default admin & sample tunnels
-│   │   └── routes/api.php              # REST API endpoints
-│   │
-│   └── frontend/         # Next.js Frontend Application
-│       ├── app/
-│       │   ├── page.tsx                # Renders Login page by default (or Dashboard if authenticated)
-│       │   └── layout.tsx
-│       ├── components/
-│       │   ├── LoginForm.tsx           # Default login screen with demo autofill
-│       │   └── Dashboard.tsx           # Full tunnel management dashboard
-│       └── lib/
-│           └── api.ts                  # API client & local auth management
+│   │   │   ├── database.sqlite               # Local SQLite database
+│   │   │   └── seeders/                      # Default admin & sample data seeders
+│   │   ├── public/
+│   │   │   └── js/
+│   │   │       └── app.js                    # Vanilla JS AJAX client (modals, forms, clipboard)
+│   │   ├── resources/
+│   │   │   └── views/
+│   │   │       ├── auth/
+│   │   │       │   └── login.blade.php       # Login view with branded logo & "Lite" pill badge
+│   │   │       ├── layouts/
+│   │   │       │   └── app.blade.php         # Master Blade layout & toast notification container
+│   │   │       ├── partials/
+│   │   │       │   ├── modals.blade.php      # All 8 application modals (Start, Add, Delete, Cloudflare)
+│   │   │       │   ├── tunnels_table_rows.blade.php # Tunnel list rows
+│   │   │       │   └── domains_table_rows.blade.php # Domain list rows
+│   │   │       └── dashboard.blade.php       # Full tabbed dashboard view
+│   │   └── routes/
+│   │       └── web.php                       # Unified web & session-authenticated AJAX routes
+│   └── frontend/                             # (Archived) Legacy Next.js decoupled frontend
 └── README.md
 ```
 
 ---
 
-## 🛠️ Getting Started
+## 🛠️ Quick Start (Single Command)
 
-### 1. Start the Laravel Backend
+All you need is PHP installed on your machine. No Node.js required!
 
 ```bash
 cd src/backend
 
-# Migrate and seed SQLite database (if not already done)
-php artisan migrate --seed
-
-# Start the Laravel development server (runs on port 8000)
+# Start the Laravel application server
 php artisan serve
 ```
 
-Backend will be active at `http://127.0.0.1:8000`.
-
-### 2. Start the Next.js Frontend
-
-```bash
-cd src/frontend
-
-# Run development server (runs on port 3000)
-npm run dev
-```
-
-Visit `http://localhost:3000` in your browser.
+Open your browser and navigate to:
+👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
 ---
 
@@ -83,20 +75,40 @@ Visit `http://localhost:3000` in your browser.
 |---|---|
 | **Email** | `admin@tunneldeck.online` |
 | **Password** | `123456` |
-| **OTP** | *None required (instant login)* |
+| **Authentication** | Direct login (No OTP required) |
 
 ---
 
-## 📡 API Endpoints
+## 🖥️ Application Features & Tabs
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| `POST` | `/api/login` | Login with email & password | No |
-| `GET` | `/api/health` | SQLite database & API health check | No |
-| `GET` | `/api/user` | Current authenticated user profile | Yes (`Bearer token`) |
-| `POST` | `/api/logout` | Revoke current auth token | Yes (`Bearer token`) |
-| `GET` | `/api/tunnels` | List all tunnels and overview metrics | Yes (`Bearer token`) |
-| `POST` | `/api/tunnels` | Create a new forwarding tunnel | Yes (`Bearer token`) |
-| `PATCH` | `/api/tunnels/{id}/toggle` | Toggle tunnel status (active / paused) | Yes (`Bearer token`) |
-| `DELETE` | `/api/tunnels/{id}` | Delete a tunnel | Yes (`Bearer token`) |
+1. **Dashboard Overview:**
+   - 4 summary metrics cards: Total Tunnels, Active Tunnels, Custom Domains, Cloudflare Network status.
+   - Quick Active Tunnels table with copy-to-clipboard for URLs.
+   - Recent Activities stream.
+2. **Tunnels Manager:**
+   - Live tunnel statuses (`Active`, `Paused`, `Stopped`, `Error`).
+   - Copyable Local URLs (`http://localhost:XXXX`) with instant visual checkmark feedback.
+   - Public URLs with real-time routing preview.
+   - **Start Tunnel Routing Modal:** Apex domain vs Subdomain selection with auto-updating endpoint previews.
+   - **Add New Tunnel Modal:** Input tunnel name and port number.
+   - **Custom Delete Modal:** Clean confirmation dialog instead of browser alert.
+3. **Custom Domains:**
+   - Configured domains table with validation badges (`Validated` / `Failed`).
+   - Flush top right-hand Cloudflare setup guide.
+   - Cloudflare instructions modal & domain deletion with custom modal.
+4. **Platform Settings:**
+   - SQLite status, PHP version, Laravel environment, and Cloudflare status.
+   - Right sidebar to update password with toggle to autofill login credentials.
+5. **Global Dynamic Toasts:**
+   - Floating notifications for all actions: tunnel added, tunnel deleted, domain deleted, password saved, etc.
 
+---
+
+## 🧪 Testing
+
+Run backend feature and unit tests with PHPUnit:
+
+```bash
+cd src/backend
+./vendor/bin/phpunit
+```
