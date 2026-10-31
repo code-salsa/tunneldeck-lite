@@ -77,3 +77,4 @@
         </td>
     </tr>
 @endforelse
+

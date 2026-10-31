@@ -955,3 +955,4 @@ function renderDomainsTableRows(domains) {
 
     if (window.lucide) window.lucide.createIcons();
 }
+

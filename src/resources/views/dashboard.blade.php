@@ -523,7 +523,7 @@
                                     <div>
                                         <span class="text-slate-400 block mb-1">Bundled Binary</span>
                                         <code class="px-2.5 py-1 rounded bg-slate-100 border border-slate-200 text-slate-800 font-mono text-[11px] block overflow-x-auto">
-                                            src/backend/bin/windows/x64/cloudflared.exe (v2026.7)
+                                            src/bin/windows/x64/cloudflared.exe (v2026.7)
                                         </code>
                                     </div>
                                     <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -674,3 +674,4 @@
 @push('scripts')
 <script src="{{ asset('js/app.js') }}"></script>
 @endpush
+

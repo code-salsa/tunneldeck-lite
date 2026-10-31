@@ -20,34 +20,33 @@ A modern, lightweight developer tunnel management platform built as a **pure Lar
 
 ```
 tunneldeck-lite/
-├── src/
-│   ├── backend/                      # Complete Laravel Application (Frontend + Backend)
-│   │   ├── app/
-│   │   │   ├── Http/Controllers/
-│   │   │   │   ├── DashboardController.php   # Loads live metrics, tunnels, domains, activities
-│   │   │   │   ├── WebAuthController.php     # Session auth, login, logout, password change
-│   │   │   │   └── Api/                      # JSON API endpoints
-│   │   │   └── Models/                       # User, Tunnel, Domain, Activity models
-│   │   ├── database/
-│   │   │   ├── database.sqlite               # Local SQLite database
-│   │   │   └── seeders/                      # Default admin & sample data seeders
-│   │   ├── public/
-│   │   │   └── js/
-│   │   │       └── app.js                    # Vanilla JS AJAX client (modals, forms, clipboard)
-│   │   ├── resources/
-│   │   │   └── views/
-│   │   │       ├── auth/
-│   │   │       │   └── login.blade.php       # Login view with branded logo & "Lite" pill badge
-│   │   │       ├── layouts/
-│   │   │       │   └── app.blade.php         # Master Blade layout & toast notification container
-│   │   │       ├── partials/
-│   │   │       │   ├── modals.blade.php      # All 8 application modals (Start, Add, Delete, Cloudflare)
-│   │   │       │   ├── tunnels_table_rows.blade.php # Tunnel list rows
-│   │   │       │   └── domains_table_rows.blade.php # Domain list rows
-│   │   │       └── dashboard.blade.php       # Full tabbed dashboard view
-│   │   └── routes/
-│   │       └── web.php                       # Unified web & session-authenticated AJAX routes
-│   └── frontend/                             # (Archived) Legacy Next.js decoupled frontend
+├── src/                                  # Complete Laravel Application (Frontend + Backend)
+│   ├── app/
+│   │   ├── Http/Controllers/
+│   │   │   ├── DashboardController.php   # Loads live metrics, tunnels, domains, activities
+│   │   │   ├── WebAuthController.php     # Session auth, login, logout, password change
+│   │   │   └── Api/                      # JSON API endpoints
+│   │   └── Models/                       # User, Tunnel, Domain, Activity models
+│   ├── database/
+│   │   ├── database.sqlite               # Local SQLite database
+│   │   └── seeders/                      # Default admin & sample data seeders
+│   ├── public/
+│   │   └── js/
+│   │       └── app.js                    # Vanilla JS AJAX client (modals, forms, clipboard)
+│   ├── resources/
+│   │   └── views/
+│   │       ├── auth/
+│   │       │   └── login.blade.php       # Login view with branded logo & "Lite" pill badge
+│   │       ├── layouts/
+│   │       │   └── app.blade.php         # Master Blade layout & toast notification container
+│   │       ├── partials/
+│   │       │   ├── modals.blade.php      # All 8 application modals (Start, Add, Delete, Cloudflare)
+│   │       │   ├── tunnels_table_rows.blade.php # Tunnel list rows
+│   │       │   └── domains_table_rows.blade.php # Domain list rows
+│   │       └── dashboard.blade.php       # Full tabbed dashboard view
+│   ├── routes/
+│   │   └── web.php                       # Unified web & session-authenticated AJAX routes
+│   └── artisan                           # Laravel CLI executable
 └── README.md
 ```
 
@@ -58,7 +57,7 @@ tunneldeck-lite/
 All you need is PHP installed on your machine. No Node.js required!
 
 ```bash
-cd src/backend
+cd src
 
 # Start the Laravel application server
 php artisan serve
