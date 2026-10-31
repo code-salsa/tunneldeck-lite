@@ -75,6 +75,58 @@
     <!-- Floating Global Toast Notifications Container -->
     <div id="toast-container" class="fixed top-6 right-6 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
 
+    <!-- ======================================================== -->
+    <!-- GLOBAL MODAL: NO INTERNET CONNECTIVITY -->
+    <!-- ======================================================== -->
+    <div id="no-internet-modal" class="hidden fixed inset-0 z-[99999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md transition-all duration-300 select-none">
+        <div class="bg-white border border-slate-200/90 rounded-3xl w-full max-w-md p-6 sm:p-8 text-center relative shadow-2xl space-y-6">
+            <!-- Icon with pulsing indicator -->
+            <div class="relative mx-auto w-20 h-20 rounded-3xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 shadow-inner">
+                <i data-lucide="wifi-off" class="w-10 h-10"></i>
+                <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-4 w-4 bg-rose-500"></span>
+                </span>
+            </div>
+
+            <!-- Content: Exactly as requested -->
+            <div class="space-y-2">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/80 text-rose-700 text-xs font-bold uppercase tracking-wider">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                    <span>Offline</span>
+                </div>
+                <h3 class="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                    No Internet Connectivity
+                </h3>
+                <p class="text-sm font-medium text-slate-600 leading-relaxed max-w-sm mx-auto">
+                    Please ensure you are connected to the internet before this app will work.
+                </p>
+            </div>
+
+            <!-- Helpful Diagnostics / Status details -->
+            <div class="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-1.5">
+                <div class="flex items-center justify-between font-medium">
+                    <span>Connection Status:</span>
+                    <span id="connectivity-status-label" class="font-bold text-rose-600 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span id="connectivity-status-text">Disconnected</span>
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400 text-left pt-1 border-t border-slate-200/60 leading-normal">
+                    TunnelDeck Lite requires active internet access for Cloudflare edge routing, tunnel creation, and license verification.
+                </p>
+            </div>
+
+            <!-- Retry button -->
+            <div>
+                <button type="button" id="btn-retry-connectivity" onclick="checkInternetConnectivity(true)" class="w-full py-3 px-5 rounded-2xl bg-[#100091] hover:bg-[#0b0068] active:scale-[0.99] text-white text-sm font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-[#100091]/25 cursor-pointer">
+                    <i data-lucide="refresh-cw" id="btn-retry-icon" class="w-4 h-4"></i>
+                    <span id="btn-retry-text">Check Connection Again</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Global Scripts -->
     <script>
         // Global CSRF Header setup for all fetch calls
@@ -117,11 +169,149 @@
             }, 4000);
         }
 
+        // ========================================================
+        // GLOBAL INTERNET CONNECTIVITY CHECKER
+        // ========================================================
+        let isInternetConnected = true;
+        let isCheckingConnectivity = false;
+
+        function showNoInternetModal(reason) {
+            const modal = document.getElementById('no-internet-modal');
+            if (!modal) return;
+            
+            isInternetConnected = false;
+            modal.classList.remove('hidden');
+
+            const statusText = document.getElementById('connectivity-status-text');
+            if (statusText && reason) {
+                statusText.textContent = reason;
+            }
+
+            if (window.lucide) window.lucide.createIcons();
+        }
+
+        function hideNoInternetModal() {
+            const modal = document.getElementById('no-internet-modal');
+            if (!modal) return;
+
+            if (!isInternetConnected) {
+                isInternetConnected = true;
+                modal.classList.add('hidden');
+                showToast('Internet connection active & restored!', 'success');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        async function verifyWanConnectivity() {
+            // If adapter says offline, we are definitely offline
+            if (!navigator.onLine) {
+                return false;
+            }
+
+            // 1. Probe local Laravel endpoint (tests socket out to 1.1.1.1 / 8.8.8.8)
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const res = await fetch('/api/connectivity-check?t=' + Date.now(), {
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data && typeof data.online === 'boolean') {
+                        return data.online;
+                    }
+                }
+            } catch (err) {
+                // If local backend is sluggish, fallback to direct browser ping
+            }
+
+            // 2. Fallback probe: direct external ping to public endpoint with no-cors
+            try {
+                const controller2 = new AbortController();
+                const timeoutId2 = setTimeout(() => controller2.abort(), 2000);
+                await fetch('https://licensing.tunneldeck.online/api/v1?t=' + Date.now(), {
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    cache: 'no-store',
+                    signal: controller2.signal
+                });
+                clearTimeout(timeoutId2);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function checkInternetConnectivity(userInitiated = false) {
+            if (isCheckingConnectivity) return;
+            isCheckingConnectivity = true;
+
+            const retryBtn = document.getElementById('btn-retry-connectivity');
+            const retryIcon = document.getElementById('btn-retry-icon');
+            const retryText = document.getElementById('btn-retry-text');
+
+            if (userInitiated && retryBtn) {
+                retryBtn.disabled = true;
+                if (retryIcon) retryIcon.classList.add('animate-spin');
+                if (retryText) retryText.textContent = 'Verifying Connection...';
+            }
+
+            try {
+                const online = await verifyWanConnectivity();
+                if (online) {
+                    hideNoInternetModal();
+                    if (userInitiated) {
+                        showToast('Internet connection verified!', 'success');
+                    }
+                } else {
+                    showNoInternetModal('No route to internet');
+                    if (userInitiated) {
+                        showToast('Still no internet connectivity. Please check your network.', 'error');
+                    }
+                }
+            } catch (e) {
+                showNoInternetModal('Network unreachable');
+            } finally {
+                isCheckingConnectivity = false;
+                if (userInitiated && retryBtn) {
+                    retryBtn.disabled = false;
+                    if (retryIcon) retryIcon.classList.remove('animate-spin');
+                    if (retryText) retryText.textContent = 'Check Connection Again';
+                    if (window.lucide) window.lucide.createIcons();
+                }
+            }
+        }
+
+        // Real-time Network Events
+        window.addEventListener('offline', () => {
+            showNoInternetModal('Network adapter offline');
+        });
+
+        window.addEventListener('online', () => {
+            checkInternetConnectivity();
+        });
+
+        // Periodic background pulse check every 8 seconds when window is active
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                checkInternetConnectivity();
+            }
+        }, 8000);
+
+        // Check on window focus (e.g. user switched back from WiFi settings)
+        window.addEventListener('focus', () => {
+            checkInternetConnectivity();
+        });
+
         // Initialize Lucide icons on load
         document.addEventListener('DOMContentLoaded', () => {
             if (window.lucide) {
                 window.lucide.createIcons();
             }
+            checkInternetConnectivity();
         });
     </script>
 

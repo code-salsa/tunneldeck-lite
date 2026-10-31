@@ -8,6 +8,27 @@ use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\TunnelController;
 use Illuminate\Support\Facades\Route;
 
+// Global Public Connectivity Check (used across all pages)
+Route::get('/api/connectivity-check', function () {
+    $connected = false;
+    $socket = @fsockopen('1.1.1.1', 53, $errno, $errstr, 1.5);
+    if ($socket) {
+        $connected = true;
+        fclose($socket);
+    } else {
+        $socket2 = @fsockopen('8.8.8.8', 53, $errno, $errstr, 1.5);
+        if ($socket2) {
+            $connected = true;
+            fclose($socket2);
+        }
+    }
+
+    return response()->json([
+        'online' => $connected,
+        'timestamp' => now()->toIso8601String(),
+    ]);
+});
+
 // Guest authentication routes
 Route::middleware('guest')->group(function () {
     Route::get('/login', [WebAuthController::class, 'showLogin'])->name('login');
