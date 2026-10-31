@@ -658,6 +658,10 @@
     <!-- ======================================================== -->
     @include('partials.modals')
 
+    @if(!$user->is_onboarded)
+        @include('partials.onboarding_modal')
+    @endif
+
 </div>
 @endsection
 

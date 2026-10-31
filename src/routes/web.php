@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\WebAuthController;
 use App\Http\Controllers\Api\DomainController;
 use App\Http\Controllers\Api\TunnelController;
@@ -17,6 +18,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::post('/logout', [WebAuthController::class, 'logout'])->name('logout');
     Route::post('/user/password', [WebAuthController::class, 'updatePassword'])->name('user.password');
+
+    // Onboarding routes
+    Route::post('/onboarding/complete', [OnboardingController::class, 'complete'])->name('onboarding.complete');
+    Route::post('/onboarding/explore', [OnboardingController::class, 'explore'])->name('onboarding.explore');
 
     // Tunnel AJAX routes (Web Session protected)
     Route::get('/api/tunnels', [TunnelController::class, 'index']);

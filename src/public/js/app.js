@@ -962,3 +962,271 @@ function renderDomainsTableRows(domains) {
     if (window.lucide) window.lucide.createIcons();
 }
 
+/* ======================================================== */
+/* MULTI-STEP ONBOARDING WIZARD */
+/* ======================================================== */
+
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    const isPassword = input.getAttribute('type') === 'password';
+    input.setAttribute('type', isPassword ? 'text' : 'password');
+    const btn = input.parentElement?.querySelector('button');
+    const icon = btn?.querySelector('i[data-lucide]');
+    if (icon) {
+        icon.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
+        if (window.lucide) window.lucide.createIcons();
+    }
+}
+
+let currentOnboardingStep = 1;
+
+function goToOnboardingStep(step) {
+    const nameInput = document.getElementById('onb-name');
+    const emailInput = document.getElementById('onb-email');
+    const nameError = document.getElementById('onb-name-error');
+    const emailError = document.getElementById('onb-email-error');
+
+    // Validation when advancing from step 1
+    if (step > 1 && currentOnboardingStep === 1) {
+        let hasError = false;
+        if (!nameInput || !nameInput.value.trim()) {
+            if (nameError) {
+                nameError.textContent = 'Please enter your full name.';
+                nameError.classList.remove('hidden');
+            }
+            nameInput?.classList.add('border-rose-500');
+            hasError = true;
+        } else {
+            if (nameError) nameError.classList.add('hidden');
+            nameInput?.classList.remove('border-rose-500');
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailInput || !emailInput.value.trim() || !emailRegex.test(emailInput.value.trim())) {
+            if (emailError) {
+                emailError.textContent = 'Please enter a valid email address.';
+                emailError.classList.remove('hidden');
+            }
+            emailInput?.classList.add('border-rose-500');
+            hasError = true;
+        } else {
+            if (emailError) emailError.classList.add('hidden');
+            emailInput?.classList.remove('border-rose-500');
+        }
+
+        if (hasError) return;
+    }
+
+    currentOnboardingStep = step;
+
+    // Show/hide step panels
+    for (let i = 1; i <= 3; i++) {
+        const stepEl = document.getElementById(`onboarding-step-${i}`);
+        if (stepEl) {
+            if (i === step) {
+                stepEl.classList.remove('hidden');
+            } else {
+                stepEl.classList.add('hidden');
+            }
+        }
+
+        const dot = document.getElementById(`step-dot-${i}`);
+        const label = dot?.nextElementSibling;
+        if (dot) {
+            if (i < step) {
+                // Completed
+                dot.className = 'w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs font-bold ring-4 ring-white shadow-sm transition-all duration-200';
+                dot.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i>';
+                if (label) {
+                    label.className = 'text-[10px] font-bold text-emerald-700 mt-1';
+                }
+            } else if (i === step) {
+                // Active
+                dot.className = 'w-8 h-8 rounded-full bg-[#100091] text-white flex items-center justify-center text-xs font-bold ring-4 ring-white shadow-sm transition-all duration-200';
+                dot.innerHTML = `<span>${i}</span>`;
+                if (label) {
+                    label.className = 'text-[10px] font-bold text-slate-800 mt-1';
+                }
+            } else {
+                // Upcoming
+                dot.className = 'w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold ring-4 ring-white shadow-sm transition-all duration-200';
+                dot.innerHTML = `<span>${i}</span>`;
+                if (label) {
+                    label.className = 'text-[10px] font-bold text-slate-400 mt-1';
+                }
+            }
+        }
+    }
+
+    // Update progress bar
+    const bar = document.getElementById('onboarding-progress-bar');
+    if (bar) {
+        if (step === 1) bar.style.width = '0%';
+        if (step === 2) bar.style.width = '50%';
+        if (step === 3) bar.style.width = '100%';
+    }
+
+    const counter = document.getElementById('onboarding-step-counter');
+    if (counter) {
+        counter.textContent = `Step ${step} of 3`;
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function triggerExplorePlatform() {
+    const emailInput = document.getElementById('onb-email');
+    const emailError = document.getElementById('onb-email-error');
+    const nameInput = document.getElementById('onb-name');
+    const cityInput = document.getElementById('onb-city');
+    const countryInput = document.getElementById('onb-country');
+
+    const emailVal = emailInput ? emailInput.value.trim() : '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailVal || !emailRegex.test(emailVal)) {
+        goToOnboardingStep(1);
+        if (emailError) {
+            emailError.textContent = 'Please enter your email to explore the platform.';
+            emailError.classList.remove('hidden');
+        }
+        if (emailInput) {
+            emailInput.classList.add('border-rose-500');
+            emailInput.focus();
+        }
+        showToast('Please enter your email to explore the platform.', 'error');
+        return;
+    }
+
+    // Call explore endpoint
+    fetch('/onboarding/explore', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
+        },
+        body: JSON.stringify({
+            email: emailVal,
+            name: nameInput?.value.trim() || 'Platform Explorer',
+            city: cityInput?.value.trim() || null,
+            country: countryInput?.value || null,
+        }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            closeOnboardingModal(data.user);
+            showToast(data.message || 'Welcome to TunnelDeck! Exploration mode active.', 'success');
+        } else {
+            showToast(data.message || 'Failed to initialize exploration mode.', 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Explore platform error:', err);
+        showToast('Network error while initializing exploration.', 'error');
+    });
+}
+
+function handleOnboardingSubmit(event) {
+    event.preventDefault();
+
+    const nameInput = document.getElementById('onb-name');
+    const emailInput = document.getElementById('onb-email');
+    const cityInput = document.getElementById('onb-city');
+    const countryInput = document.getElementById('onb-country');
+    const passwordInput = document.getElementById('onb-password');
+    const passwordConfInput = document.getElementById('onb-password-confirmation');
+    const passwordError = document.getElementById('onb-password-error');
+    const submitBtn = document.getElementById('onb-submit-btn');
+    const submitText = document.getElementById('onb-submit-text');
+
+    const passwordVal = passwordInput ? passwordInput.value : '';
+    const passwordConfVal = passwordConfInput ? passwordConfInput.value : '';
+
+    if (passwordVal.length < 6) {
+        if (passwordError) {
+            passwordError.textContent = 'Password must be at least 6 characters.';
+            passwordError.classList.remove('hidden');
+        }
+        passwordInput?.classList.add('border-rose-500');
+        return;
+    }
+
+    if (passwordVal !== passwordConfVal) {
+        if (passwordError) {
+            passwordError.textContent = 'Passwords do not match.';
+            passwordError.classList.remove('hidden');
+        }
+        passwordConfInput?.classList.add('border-rose-500');
+        return;
+    }
+
+    if (passwordError) passwordError.classList.add('hidden');
+    passwordInput?.classList.remove('border-rose-500');
+    passwordConfInput?.classList.remove('border-rose-500');
+
+    // Loading state
+    if (submitBtn) submitBtn.disabled = true;
+    if (submitText) submitText.textContent = 'Saving & Registering...';
+
+    fetch('/onboarding/complete', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-CSRF-TOKEN': getCsrfToken(),
+        },
+        body: JSON.stringify({
+            name: nameInput?.value.trim(),
+            email: emailInput?.value.trim(),
+            city: cityInput?.value.trim() || null,
+            country: countryInput?.value || null,
+            password: passwordVal,
+            password_confirmation: passwordConfVal,
+        }),
+    })
+    .then(r => r.json().then(data => ({ status: r.status, body: data })))
+    .then(({ status, body }) => {
+        if (status === 200 && body.success) {
+            closeOnboardingModal(body.user);
+            showToast(body.message || 'Onboarding completed successfully!', 'success');
+        } else {
+            if (submitBtn) submitBtn.disabled = false;
+            if (submitText) submitText.textContent = 'Complete Setup & Launch';
+            const msg = body.errors ? Object.values(body.errors).flat().join(' ') : (body.message || 'Failed to complete onboarding.');
+            showToast(msg, 'error');
+        }
+    })
+    .catch(err => {
+        console.error('Onboarding submit error:', err);
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = 'Complete Setup & Launch';
+        showToast('Network error during onboarding.', 'error');
+    });
+}
+
+function closeOnboardingModal(userData) {
+    const modal = document.getElementById('onboarding-modal');
+    if (modal) {
+        modal.classList.add('opacity-0');
+        setTimeout(() => modal.remove(), 300);
+    }
+
+    if (userData) {
+        // Update sidebar user details in real-time
+        const userCard = document.getElementById('sidebar-user-card');
+        if (userCard) {
+            const nameEl = userCard.querySelector('p.text-xs.font-bold');
+            if (nameEl) nameEl.textContent = userData.name;
+
+            const emailEl = userCard.querySelector('p.text-\\[10px\\]');
+            if (emailEl) emailEl.textContent = userData.email;
+
+            const avatarEl = userCard.querySelector('.rounded-lg.bg-indigo-100');
+            if (avatarEl && userData.initial) avatarEl.textContent = userData.initial;
+        }
+    }
+}
+

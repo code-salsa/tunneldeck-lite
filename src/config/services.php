@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'tunneldeck' => [
+        'url' => env('TUNNELDECK_API_URL', 'https://licensing.tunneldeck.online/api/v1'),
+        'token' => env('TUNNELDECK_API_TOKEN', 'td_live_0b22af8832fc33b46b2001073347bb832c9b68c59eed1eb8'),
+    ],
+
 ];
