@@ -167,3 +167,4 @@ class LicenseTest extends TestCase
         $this->assertEquals('USD', $user->fresh()->currency);
     }
 }
+

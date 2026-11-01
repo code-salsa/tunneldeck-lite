@@ -19,9 +19,122 @@ class LicenseController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated',
+                'redirect' => '/login',
+            ], 401);
+        }
+
         $result = $tunnelDeck->syncUserLicense($user);
 
+        if (!empty($result['client_deleted']) || !empty($result['reset_to_defaults'])) {
+            return response()->json(array_merge($result, [
+                'redirect' => '/login',
+            ]), 200);
+        }
+
         return response()->json($result);
+    }
+
+    /**
+     * Download and merge Pro edition codebase into project src.
+     */
+    public function installProPackage(Request $request, TunnelDeckService $tunnelDeck): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unauthenticated.',
+            ], 401);
+        }
+
+        $result = $tunnelDeck->installProPackageForUser($user);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Webhook/Sync endpoint invoked when a client is deleted on licensing platform.
+     * Automatically resets the local SQLite database to factory defaults.
+     */
+    public function clientDeletedWebhook(Request $request): JsonResponse
+    {
+        $email = $request->input('email');
+        \Illuminate\Support\Facades\Log::channel('tunnels')->info("LicenseController: Received client-deleted event for email: " . ($email ?: 'all'));
+
+        $currentUser = User::first();
+        if ($email && $currentUser && strtolower($currentUser->email) !== strtolower($email) && $currentUser->is_onboarded) {
+            return response()->json([
+                'success' => true,
+                'ignored' => true,
+                'message' => "Client {$email} does not match local user {$currentUser->email}.",
+            ]);
+        }
+
+        // If local instance is already in factory default mode or unonboarded, skip reset
+        if (!$currentUser || !$currentUser->is_onboarded || strtolower($currentUser->email) === 'admin@tunneldeck.online') {
+            return response()->json([
+                'success' => true,
+                'ignored' => true,
+                'message' => "Local user is already in default exploration state.",
+            ]);
+        }
+
+        $result = TunnelDeckService::resetToDefaults();
+
+        return response()->json([
+            'success' => true,
+            'client_deleted' => true,
+            'reset_to_defaults' => true,
+            'redirect' => '/login',
+            'message' => 'Client deleted from licensing platform. Local database reset to defaults.',
+            'details' => $result,
+        ]);
+    }
+
+    /**
+     * Get local hardware device fingerprinting details (Layer 3).
+     */
+    public function deviceInfo(\App\Services\HardwareFingerprintService $hwidService): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'device' => $hwidService->getDeviceDetails(),
+            'is_pro_verified' => Auth::user()?->isPro() ?? false,
+        ]);
+    }
+
+    /**
+     * Get activation seats information for the current user and device.
+     */
+    public function seatsInfo(TunnelDeckService $tunnelDeck): JsonResponse
+    {
+        /** @var User $user */
+        $user = Auth::user();
+        $response = $tunnelDeck->getUserActivations($user->email);
+        $localHwid = app(\App\Services\HardwareFingerprintService::class)->getHwid();
+
+        if ($response && $response->successful()) {
+            $data = $response->json();
+            $data['local_hwid'] = $localHwid;
+            $data['is_current_device_bound'] = in_array($localHwid, $data['bound_hwids'] ?? [], true);
+            return response()->json($data);
+        }
+
+        return response()->json([
+            'success' => true,
+            'max_activations' => 1,
+            'activations_count' => 1,
+            'available_seats' => 0,
+            'local_hwid' => $localHwid,
+            'bound_hwids' => [$localHwid],
+            'is_current_device_bound' => true,
+        ]);
     }
 
     /**
@@ -37,6 +150,14 @@ class LicenseController extends Controller
 
         /** @var User $user */
         $user = Auth::user();
+
+        if ($user && $user->isExploring()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Platform settings cannot be changed in simulation mode. Please complete onboarding first.',
+            ], 403);
+        }
+
         $toPackage = $validated['to_package'];
         $fromPackage = $user->package ?? 'lite';
         $amount = (float) ($validated['amount'] ?? ($toPackage === 'pro' ? 499.00 : ($toPackage === 'enterprise' ? 1499.00 : 0.00)));
@@ -51,6 +172,10 @@ class LicenseController extends Controller
 
         // 2. Sync upgraded license back to local platform
         $syncResult = $tunnelDeck->syncUserLicense($user);
+
+        if ($toPackage === 'pro') {
+            $tunnelDeck->installProPackageForUser($user);
+        }
 
         return response()->json([
             'success' => $syncResult['success'],

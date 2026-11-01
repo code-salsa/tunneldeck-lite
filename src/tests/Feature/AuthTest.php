@@ -51,4 +51,41 @@ class AuthTest extends TestCase
                 'status' => 'error',
             ]);
     }
+
+    public function test_default_admin_can_login_via_web(): void
+    {
+        $response = $this->postJson('/login', [
+            'email' => 'admin@tunneldeck.online',
+            'password' => '123456',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Login successful',
+            ]);
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_default_admin_fallback_when_account_renamed_in_onboarding(): void
+    {
+        // Simulate user renamed during onboarding
+        $user = User::first();
+        $user->update(['email' => 'custom_owner@domain.com']);
+
+        // Attempt login using the default credentials
+        $response = $this->postJson('/login', [
+            'email' => 'admin@tunneldeck.online',
+            'password' => '123456',
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJson([
+                'status' => 'success',
+                'message' => 'Login successful',
+            ]);
+
+        $this->assertAuthenticated();
+    }
 }

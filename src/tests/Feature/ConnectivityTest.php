@@ -18,3 +18,4 @@ class ConnectivityTest extends TestCase
         $this->assertIsBool($response->json('online'));
     }
 }
+

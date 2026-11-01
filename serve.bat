@@ -1,0 +1,176 @@
+@echo off
+setlocal enabledelayedexpansion
+cd /d "%~dp0"
+
+:: 1. Generate random port between 9000 and 9999
+set /a PORT=9000 + (!RANDOM! %% 1000)
+
+:: 2. Locate Microsoft Edge or Google Chrome executable
+set "BROWSER_EXE="
+
+if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" (
+    set "BROWSER_EXE=%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe"
+) else if exist "%ProgramFiles%\Microsoft\Edge\Application\msedge.exe" (
+    set "BROWSER_EXE=%ProgramFiles%\Microsoft\Edge\Application\msedge.exe"
+) else if exist "%LocalAppData%\Microsoft\Edge\Application\msedge.exe" (
+    set "BROWSER_EXE=%LocalAppData%\Microsoft\Edge\Application\msedge.exe"
+)
+
+if not defined BROWSER_EXE (
+    if exist "%ProgramFiles%\Google\Chrome\Application\chrome.exe" (
+        set "BROWSER_EXE=%ProgramFiles%\Google\Chrome\Application\chrome.exe"
+    ) else if exist "%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe" (
+        set "BROWSER_EXE=%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe"
+    ) else if exist "%LocalAppData%\Google\Chrome\Application\chrome.exe" (
+        set "BROWSER_EXE=%LocalAppData%\Google\Chrome\Application\chrome.exe"
+    )
+)
+
+:: Set splash screen URL
+set "SPLASH_URL=file:///%~dp0loading.html?port=!PORT!"
+
+:: Initialize status file
+echo {"step":"env","status":"running","message":"Initializing desktop launcher..."} > "%~dp0status.json"
+
+:: 3. Launch loader window immediately so user sees activities right away
+if defined BROWSER_EXE (
+    start "" "!BROWSER_EXE!" --app="!SPLASH_URL!" --allow-file-access-from-files --user-data-dir="%~dp0.app_data" --app-id=tunneldeck --window-size=1280,800
+) else (
+    start "" "!SPLASH_URL!"
+)
+
+:: 4. Create Desktop Shortcut on First Run
+set "SHORTCUT_PATH=%USERPROFILE%\Desktop\TunnelDeck.lnk"
+set "TARGET_EXE=%~dp0App.exe"
+set "ICON_FILE=%~dp0app.ico"
+
+if not exist "!SHORTCUT_PATH!" (
+    if exist "!TARGET_EXE!" (
+        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!SHORTCUT_PATH!'); $s.TargetPath = '!TARGET_EXE!'; $s.WorkingDirectory = '%~dp0'; if (Test-Path '!ICON_FILE!') { $s.IconLocation = '!ICON_FILE!' }; $s.Save()" >nul 2>&1
+    )
+)
+
+:: 5. Terminate any previous stale TunnelDeck Lite server processes
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$procs = Get-CimInstance Win32_Process -Filter \"Name = 'php.exe'\" -ErrorAction SilentlyContinue; foreach ($p in $procs) { if ($p.CommandLine -match 'tunneldeck-lite') { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
+
+echo {"step":"env","status":"done","message":"Desktop environment and workspace ready"} > "%~dp0status.json"
+
+:: 6. Locate PHP runtime engine
+echo {"step":"php","status":"running","message":"Loading PHP 8.4 runtime engine..."} > "%~dp0status.json"
+set "PHP_CMD="
+
+:: 1st Priority: Pre-bundled portable PHP in bin\php
+if exist "%~dp0bin\php\php.exe" (
+    set "PHP_CMD=%~dp0bin\php\php.exe"
+)
+
+:: 2nd Priority: Portable PHP in .app_data\php
+if not defined PHP_CMD (
+    if exist "%~dp0.app_data\php\php.exe" (
+        set "PHP_CMD=%~dp0.app_data\php\php.exe"
+    )
+)
+
+:: 3rd Priority: System PATH PHP >= 8.2 with pdo_sqlite
+if not defined PHP_CMD (
+    where php >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        php -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+        if !ERRORLEVEL! equ 0 set "PHP_CMD=php"
+    )
+)
+
+:: 4th Priority: Scan common installation directories
+if not defined PHP_CMD (
+    for %%P in (
+        "C:\php\php.exe"
+        "C:\tools\php\php.exe"
+        "C:\xampp\php\php.exe"
+        "D:\xampp\php\php.exe"
+        "E:\xampp\php\php.exe"
+        "%LOCALAPPDATA%\Programs\php\php.exe"
+    ) do (
+        if not defined PHP_CMD (
+            if exist %%P (
+                %%P -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+                if !ERRORLEVEL! equ 0 set "PHP_CMD=%%~P"
+            )
+        )
+    )
+)
+
+if not defined PHP_CMD (
+    for /d %%D in ("C:\laragon\bin\php\*") do (
+        if not defined PHP_CMD (
+            if exist "%%D\php.exe" (
+                "%%D\php.exe" -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+                if !ERRORLEVEL! equ 0 set "PHP_CMD=%%D\php.exe"
+            )
+        )
+    )
+)
+
+if not defined PHP_CMD (
+    for /d %%D in ("C:\Program Files\PHP\*") do (
+        if not defined PHP_CMD (
+            if exist "%%D\php.exe" (
+                "%%D\php.exe" -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+                if !ERRORLEVEL! equ 0 set "PHP_CMD=%%D\php.exe"
+            )
+        )
+    )
+)
+
+:: If PHP is still not found, report error
+if not defined PHP_CMD (
+    echo {"step":"php","status":"error","message":"PHP runtime not found. Please ensure bin/php is included or install PHP 8.2+."} > "%~dp0status.json"
+    exit /b 1
+)
+
+:: Prepend PHP directory to session PATH so extensions and sub-processes can resolve DLLs
+for %%F in ("!PHP_CMD!") do set "PHP_DIR=%%~dpF"
+if defined PHP_DIR (
+    set "PATH=!PHP_DIR!;!PHP_DIR!ext;!PATH!"
+)
+
+echo {"step":"php","status":"done","message":"PHP runtime verified"} > "%~dp0status.json"
+
+:: 7. Verify required PHP SQLite extension
+echo {"step":"database","status":"running","message":"Verifying SQLite database and extensions..."} > "%~dp0status.json"
+"!PHP_CMD!" -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+if !ERRORLEVEL! neq 0 (
+    echo {"step":"database","status":"error","message":"The pdo_sqlite extension is disabled in php.ini. Please open php.ini and uncomment: extension=pdo_sqlite"} > "%~dp0status.json"
+    exit /b 1
+)
+
+:: 8. Ensure storage and log directories exist
+if not exist "%~dp0src\storage\framework\cache\data" mkdir "%~dp0src\storage\framework\cache\data" >nul 2>&1
+if not exist "%~dp0src\storage\framework\sessions" mkdir "%~dp0src\storage\framework\sessions" >nul 2>&1
+if not exist "%~dp0src\storage\framework\views" mkdir "%~dp0src\storage\framework\views" >nul 2>&1
+if not exist "%~dp0src\storage\logs" mkdir "%~dp0src\storage\logs" >nul 2>&1
+
+:: 9. Ensure .env file exists
+if not exist "%~dp0src\.env" (
+    if exist "%~dp0src\.env.example" (
+        copy /y "%~dp0src\.env.example" "%~dp0src\.env" >nul 2>&1
+    )
+)
+
+:: 10. Ensure database.sqlite exists and has tables
+if not exist "%~dp0src\database\database.sqlite" (
+    type nul > "%~dp0src\database\database.sqlite"
+    if exist "%~dp0src\database\schema\sqlite-schema.sql" (
+        "!PHP_CMD!" -r "$db = new PDO('sqlite:%~dp0src/database/database.sqlite'); $sql = file_get_contents('%~dp0src/database/schema/sqlite-schema.sql'); $db->exec($sql);" >nul 2>&1
+        "!PHP_CMD!" "%~dp0src\artisan" db:seed --force >nul 2>&1
+    )
+)
+
+echo {"step":"database","status":"done","message":"SQLite database and environment ready"} > "%~dp0status.json"
+
+:: 11. Run server directly with built-in router
+echo {"step":"server","status":"running","message":"Starting local server on port !PORT!..."} > "%~dp0status.json"
+cd /d "%~dp0src"
+"!PHP_CMD!" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" > "%~dp0src\storage\logs\startup.log" 2>&1
+
+:: If server stops unexpectedly
+echo {"step":"server","status":"error","message":"Local server stopped unexpectedly. Check src/storage/logs/startup.log for error details."} > "%~dp0status.json"

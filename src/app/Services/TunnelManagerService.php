@@ -29,11 +29,28 @@ class TunnelManagerService
     {
         $userId = auth()->id();
         
-        // Check max tunnels limit
-        $limit = config('tunneldeck.max_tunnels', 10);
-        $currentCount = $userId ? Tunnel::where('user_id', $userId)->count() : Tunnel::count();
-        if ($currentCount >= $limit) {
-            throw new \Exception("Maximum tunnel limit of {$limit} reached.");
+        // Check max tunnels limit for Lite plan
+        $user = auth()->user() ?? \App\Models\User::find($userId) ?? \App\Models\User::first();
+        $isPro = false;
+        if ($user) {
+            if (method_exists($user, 'isPro')) {
+                $isPro = (bool) $user->isPro();
+            } elseif (method_exists($user, 'isUnlimitedTunnels')) {
+                $isPro = (bool) $user->isUnlimitedTunnels();
+            } else {
+                $isPro = in_array(strtolower($user->package ?? 'lite'), ['pro', 'enterprise']);
+            }
+        }
+        if (!$isPro) {
+            $limit = (int) config('tunneldeck.max_tunnels', 5);
+            $currentCount = Tunnel::where(function ($q) use ($userId) {
+                if ($userId) {
+                    $q->where('user_id', $userId)->orWhereNull('user_id');
+                }
+            })->count();
+            if ($currentCount >= $limit) {
+                throw new \Exception("You have reached the number of allowed tunnel creation. Upgrade to a pro plan to enjoy unlimited tunnels.");
+            }
         }
 
         $tunnel = Tunnel::create([
@@ -469,6 +486,21 @@ class TunnelManagerService
      */
     public function getTunnelStatus(Tunnel $tunnel): string
     {
+        // Dummy tunnels in simulation mode do not have OS PIDs
+        if ($tunnel->is_dummy) {
+            if ($tunnel->status === 'running' && $tunnel->last_started_at) {
+                $elapsed = abs((int) now()->diffInSeconds($tunnel->last_started_at));
+                if ($elapsed >= 60) {
+                    Tunnel::where('id', $tunnel->id)->update([
+                        'status' => 'stopped',
+                        'public_url' => null,
+                    ]);
+                    return 'stopped';
+                }
+            }
+            return $tunnel->status;
+        }
+
         if ($tunnel->status === 'running' || $tunnel->status === 'starting') {
             $isAlive = !empty($tunnel->pid) && $this->processTracker->isPidAlive($tunnel->pid);
             
@@ -515,6 +547,19 @@ class TunnelManagerService
         $allTunnels = Tunnel::all();
 
         foreach ($allTunnels as $tunnel) {
+            // Handle dummy tunnels for simulation
+            if ($tunnel->is_dummy) {
+                if ($tunnel->status === 'running' && $tunnel->last_started_at) {
+                    if (abs((int) now()->diffInSeconds($tunnel->last_started_at)) >= 60) {
+                        Tunnel::where('id', $tunnel->id)->update([
+                            'status' => 'stopped',
+                            'public_url' => null,
+                        ]);
+                    }
+                }
+                continue;
+            }
+
             $isAlive = !empty($tunnel->pid) && $this->processTracker->isPidAlive($tunnel->pid);
             
             if (!$isAlive && in_array($tunnel->status, ['running', 'starting'])) {

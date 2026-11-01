@@ -77,12 +77,19 @@ class AuthController extends Controller
      */
     public function updatePassword(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        if ($user && $user->isExploring()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Platform settings cannot be changed in simulation mode. Please complete onboarding first.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'current_password' => ['nullable', 'string'],
             'new_password' => ['required', 'string', 'min:6'],
         ]);
-
-        $user = $request->user();
 
         // If current password provided, verify it
         if (!empty($validated['current_password']) && !Hash::check($validated['current_password'], $user->password)) {

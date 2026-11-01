@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'TunnelDeck Lite — Cloudflared Engine')</title>
+    <title>@yield('title', 'TunnelDeck ' . ((auth()->user() && auth()->user()->isPro()) ? 'Pro' : 'Lite') . ' — Cloudflared Engine')</title>
+
+    <!-- Branding Favicon -->
+    <link rel="icon" type="image/png" href="{{ asset('images/branding-icon.png') }}?v={{ @filemtime(public_path('images/branding-icon.png')) ?: 1 }}">
 
     <!-- Google Fonts: Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,6 +41,67 @@
 
     <!-- Lucide Icons Library -->
     <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <!-- Global Security: Disable Right Click, Context Menu & Inspect Element shortcuts -->
+    <script>
+        (function() {
+            'use strict';
+
+            // 1. Disable Context Menu (Right Click) across the whole application
+            document.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }, true);
+
+            // 2. Disable DevTools & Inspect Element keyboard shortcuts (F12, Ctrl+Shift+I/J/C, Ctrl+U, Ctrl+S)
+            document.addEventListener('keydown', function(e) {
+                const key = e.key ? e.key.toUpperCase() : '';
+                const keyCode = e.keyCode || e.which;
+                const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+
+                // F12 (Developer Tools)
+                if (key === 'F12' || keyCode === 123) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl + Shift + I (Inspect Elements)
+                // Ctrl + Shift + J (Developer Console)
+                // Ctrl + Shift + C (Inspect DOM Element)
+                if (isCtrlOrMeta && e.shiftKey && (key === 'I' || key === 'J' || key === 'C' || keyCode === 73 || keyCode === 74 || keyCode === 67)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl + U (View Source)
+                if (isCtrlOrMeta && (key === 'U' || keyCode === 85)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Ctrl + S (Save Page)
+                if (isCtrlOrMeta && (key === 'S' || keyCode === 83)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
+                // Shift + F10 (Context Menu Shortcut)
+                if (e.shiftKey && (key === 'F10' || keyCode === 121)) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+            }, true);
+        })();
+    </script>
 
     <style>
         /* Custom scrollbars */
@@ -113,7 +177,7 @@
                     </span>
                 </div>
                 <p class="text-[11px] text-slate-400 text-left pt-1 border-t border-slate-200/60 leading-normal">
-                    TunnelDeck Lite requires active internet access for Cloudflare edge routing, tunnel creation, and license verification.
+                    TunnelDeck <span class="app-edition-label" data-app-edition>{{ (auth()->user() && auth()->user()->isPro()) ? 'Pro' : 'Lite' }}</span> requires active internet access for Cloudflare edge routing, tunnel creation, and license verification.
                 </p>
             </div>
 
@@ -174,6 +238,7 @@
         // ========================================================
         let isInternetConnected = true;
         let isCheckingConnectivity = false;
+        let consecutiveConnectivityFailures = 0;
 
         function showNoInternetModal(reason) {
             const modal = document.getElementById('no-internet-modal');
@@ -204,15 +269,10 @@
         }
 
         async function verifyWanConnectivity() {
-            // If adapter says offline, we are definitely offline
-            if (!navigator.onLine) {
-                return false;
-            }
-
-            // 1. Probe local Laravel endpoint (tests socket out to 1.1.1.1 / 8.8.8.8)
+            // 1. Probe local Laravel endpoint (checks system DNS & HTTPS sockets to Cloudflare/Google)
             try {
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 2000);
+                const timeoutId = setTimeout(() => controller.abort(), 3500);
                 const res = await fetch('/api/connectivity-check?t=' + Date.now(), {
                     cache: 'no-store',
                     signal: controller.signal
@@ -220,29 +280,41 @@
                 clearTimeout(timeoutId);
                 if (res.ok) {
                     const data = await res.json();
-                    if (data && typeof data.online === 'boolean') {
-                        return data.online;
+                    if (data && data.online === true) {
+                        return true;
                     }
                 }
             } catch (err) {
-                // If local backend is sluggish, fallback to direct browser ping
+                // If local backend is sluggish, proceed to direct browser WAN probes
             }
 
-            // 2. Fallback probe: direct external ping to public endpoint with no-cors
-            try {
-                const controller2 = new AbortController();
-                const timeoutId2 = setTimeout(() => controller2.abort(), 2000);
-                await fetch('https://licensing.tunneldeck.online/api/v1?t=' + Date.now(), {
-                    method: 'HEAD',
-                    mode: 'no-cors',
-                    cache: 'no-store',
-                    signal: controller2.signal
-                });
-                clearTimeout(timeoutId2);
-                return true;
-            } catch (e) {
-                return false;
+            // 2. Direct browser-level probes (mode: 'no-cors' succeeds if packets reach the public internet)
+            const browserTargets = [
+                'https://www.google.com/generate_204',
+                'https://cloudflare.com/cdn-cgi/trace',
+                'https://1.1.1.1/cdn-cgi/trace',
+                'https://licensing.tunneldeck.online/favicon.ico'
+            ];
+
+            for (const target of browserTargets) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 2500);
+                    await fetch(target + (target.includes('?') ? '&' : '?') + 't=' + Date.now(), {
+                        method: 'GET',
+                        mode: 'no-cors',
+                        cache: 'no-store',
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+                    return true;
+                } catch (e) {
+                    // Try next fallback endpoint
+                }
             }
+
+            // If local probe reported false and all browser probes failed:
+            return false;
         }
 
         async function checkInternetConnectivity(userInitiated = false) {
@@ -262,18 +334,37 @@
             try {
                 const online = await verifyWanConnectivity();
                 if (online) {
+                    consecutiveConnectivityFailures = 0;
                     hideNoInternetModal();
                     if (userInitiated) {
                         showToast('Internet connection verified!', 'success');
                     }
                 } else {
-                    showNoInternetModal('No route to internet');
-                    if (userInitiated) {
-                        showToast('Still no internet connectivity. Please check your network.', 'error');
+                    consecutiveConnectivityFailures++;
+                    // Debounce: require 2 consecutive failed probes for background checks to prevent
+                    // momentary socket jitter from triggering false offline alerts.
+                    // User-initiated check shows immediately.
+                    if (userInitiated || consecutiveConnectivityFailures >= 2) {
+                        showNoInternetModal('No route to internet');
+                        if (userInitiated) {
+                            showToast('Still no internet connectivity. Please check your network.', 'error');
+                        }
+                    } else {
+                        // Transient blip: schedule a fast re-test in 1.2s to confirm before displaying modal
+                        setTimeout(() => {
+                            checkInternetConnectivity();
+                        }, 1200);
                     }
                 }
             } catch (e) {
-                showNoInternetModal('Network unreachable');
+                consecutiveConnectivityFailures++;
+                if (userInitiated || consecutiveConnectivityFailures >= 2) {
+                    showNoInternetModal('Network unreachable');
+                } else {
+                    setTimeout(() => {
+                        checkInternetConnectivity();
+                    }, 1200);
+                }
             } finally {
                 isCheckingConnectivity = false;
                 if (userInitiated && retryBtn) {
@@ -287,7 +378,7 @@
 
         // Real-time Network Events
         window.addEventListener('offline', () => {
-            showNoInternetModal('Network adapter offline');
+            checkInternetConnectivity(true);
         });
 
         window.addEventListener('online', () => {

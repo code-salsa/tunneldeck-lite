@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Route;
 // Public routes
 Route::post('/login', [AuthController::class, 'login']);
 
+// Licensing Platform Sync Webhook: Reset to defaults on client deletion
+Route::post('/license/client-deleted', [\App\Http\Controllers\LicenseController::class, 'clientDeletedWebhook']);
+Route::post('/client-deleted', [\App\Http\Controllers\LicenseController::class, 'clientDeletedWebhook']);
+Route::post('/webhook/client-deleted', [\App\Http\Controllers\LicenseController::class, 'clientDeletedWebhook']);
+
 Route::get('/health', function () {
     return response()->json([
         'status' => 'operational',
@@ -25,6 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Tunnel Infrastructure endpoints
     Route::get('/tunnels', [TunnelController::class, 'index']);
+    Route::get('/tunnels/limit', [TunnelController::class, 'limit']);
     Route::get('/stats', [TunnelController::class, 'stats']);
     Route::post('/tunnels', [TunnelController::class, 'store']);
     Route::put('/tunnels/{tunnel}', [TunnelController::class, 'update']);
@@ -33,6 +39,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tunnels/{tunnel}/restart', [TunnelController::class, 'restart']);
     Route::patch('/tunnels/{tunnel}/toggle', [TunnelController::class, 'toggleStatus']);
     Route::get('/tunnels/{tunnel}/status', [TunnelController::class, 'status']);
+    Route::post('/tunnels/bulk-delete', [TunnelController::class, 'bulkDestroy']);
+    Route::delete('/tunnels/bulk-delete', [TunnelController::class, 'bulkDestroy']);
     Route::delete('/tunnels/{tunnel}', [TunnelController::class, 'destroy']);
 
     // Include Pro Custom Domains API endpoints if addon is installed

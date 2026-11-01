@@ -14,6 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->redirectGuestsTo(fn (Request $request) => $request->expectsJson() ? null : route('login'));
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+            'api/license/*',
+            'api/webhook/*',
+        ]);
+        $middleware->append(\App\Http\Middleware\CheckAccountStatus::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

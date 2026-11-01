@@ -1,6 +1,24 @@
 @extends('layouts.app')
 
-@section('title', 'Sign In — TunnelDeck Lite')
+@php
+    $hasProUser = false;
+    try {
+        $hasProUser = \App\Models\User::whereIn('package', ['pro', 'enterprise'])->exists();
+    } catch (\Throwable $e) {
+        $hasProUser = false;
+    }
+    $currentEdition = $hasProUser ? 'Pro' : 'Lite';
+
+    $existingUser = null;
+    try {
+        $existingUser = \App\Models\User::first();
+    } catch (\Throwable $e) {
+        $existingUser = null;
+    }
+    $prefilledEmail = $existingUser ? $existingUser->email : 'admin@tunneldeck.online';
+@endphp
+
+@section('title', 'Sign In — TunnelDeck ' . $currentEdition)
 
 @section('content')
 <div class="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 relative overflow-hidden">
@@ -13,16 +31,12 @@
         <div class="text-center mb-7">
             <!-- Main Logo Header -->
             <div class="flex items-center justify-center gap-3 mb-3.5">
-                <div class="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-[#100091] text-white flex items-center justify-center shadow-lg shadow-[#100091]/25 shrink-0">
-                    <i data-lucide="radio" class="w-6 h-6 animate-pulse"></i>
-                </div>
+                <img src="{{ asset('images/branding-icon.png') }}?v={{ @filemtime(public_path('images/branding-icon.png')) ?: 1 }}" alt="TunnelDeck Logo" class="w-12 h-12 rounded-2xl shadow-lg shadow-[#100091]/20 object-contain shrink-0">
                 <div class="flex items-center gap-2">
                     <span class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 font-sans">
                         TunnelDeck
                     </span>
-                    <span class="px-2.5 py-0.5 rounded-full bg-indigo-50 text-[#100091] border border-indigo-200/90 text-xs font-extrabold uppercase tracking-wider shadow-2xs">
-                        Lite
-                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full {{ $hasProUser ? 'bg-amber-100 text-amber-800 border-amber-300' : 'bg-indigo-50 text-[#100091] border-indigo-200/90' }} border text-xs font-extrabold uppercase tracking-wider shadow-2xs app-edition-label" data-app-edition>{{ $currentEdition }}</span>
                 </div>
             </div>
 
@@ -67,8 +81,8 @@
                             name="email"
                             required
                             autocomplete="email"
-                            value="{{ old('email', 'admin@tunneldeck.online') }}"
-                            placeholder="admin@tunneldeck.online"
+                            value="{{ old('email', $prefilledEmail) }}"
+                            placeholder="{{ $prefilledEmail }}"
                             class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#100091]/20 focus:border-[#100091] transition shadow-2xs"
                         >
                     </div>

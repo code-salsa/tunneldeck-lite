@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Starting TunnelDeck Lite...</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #bac4e9;
+      color: #020089;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      user-select: none;
+      padding: 24px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(16px);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(2, 0, 137, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.7);
+      padding: 32px;
+      width: 480px;
+      max-width: 95vw;
+      transition: all 0.3s ease;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 24px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .app-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(2, 0, 137, 0.15);
+      object-fit: contain;
+    }
+
+    .header-text h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #020089;
+      letter-spacing: -0.3px;
+    }
+
+    .header-text p {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 2px;
+    }
+
+    .badge-pill {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: #e0e7ff;
+      color: #3730a3;
+    }
+
+    .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: #ffffff;
+      border: 1px solid #f1f5f9;
+      transition: all 0.25s ease;
+    }
+
+    .activity-item.active {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+    }
+
+    .activity-item.error {
+      background: #fff1f2;
+      border-color: #fca5a5;
+    }
+
+    .activity-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 12px;
+      transition: all 0.25s ease;
+    }
+
+    .status-pending .activity-icon {
+      background: #f1f5f9;
+      color: #94a3b8;
+      border: 1.5px solid #e2e8f0;
+    }
+
+    .status-running .activity-icon {
+      background: #eff6ff;
+      color: #2563eb;
+      border: 1.5px solid #93c5fd;
+    }
+
+    .status-done .activity-icon {
+      background: #dcfce7;
+      color: #16a34a;
+      border: 1.5px solid #86efac;
+    }
+
+    .status-error .activity-icon {
+      background: #fee2e2;
+      color: #dc2626;
+      border: 1.5px solid #fca5a5;
+    }
+
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1e293b;
+      line-height: 1.3;
+    }
+
+    .activity-detail {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 2px;
+      line-height: 1.3;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .status-error .activity-title {
+      color: #b91c1c;
+    }
+
+    .status-error .activity-detail {
+      color: #dc2626;
+    }
+
+    /* Small spinner for active activity */
+    .mini-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid #93c5fd;
+      border-top-color: #2563eb;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Error Alert Card */
+    .error-card {
+      display: none;
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 12px;
+      background: #fff5f5;
+      border: 1.5px solid #f87171;
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .error-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #991b1b;
+      margin-bottom: 6px;
+    }
+
+    .error-msg {
+      font-size: 12px;
+      color: #b91c1c;
+      line-height: 1.5;
+    }
+
+    .error-log-box {
+      display: none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #0f172a;
+      color: #f87171;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 11px;
+      line-height: 1.45;
+      border-radius: 8px;
+      max-height: 110px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .error-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: #020089;
+      color: #ffffff;
+    }
+
+    .btn-primary:hover {
+      background: #010066;
+    }
+
+    .btn-secondary {
+      background: #ffffff;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+    }
+
+    .btn-secondary:hover {
+      background: #f8fafc;
+    }
+
+    .footer {
+      margin-top: 16px;
+      text-align: center;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="header">
+      <img src="app.ico" alt="TunnelDeck" class="app-icon" onerror="this.style.display='none'">
+      <div class="header-text">
+        <h1>TunnelDeck Lite</h1>
+        <p id="overall-status">Launching local workspace...</p>
+      </div>
+      <span class="badge-pill" id="port-badge">Port ...</span>
+    </div>
+
+    <div class="activity-list">
+      <!-- Activity 1: Environment & Workspace -->
+      <div class="activity-item status-done" id="step-env">
+        <div class="activity-icon">✓</div>
+        <div class="activity-content">
+          <div class="activity-title">Desktop Environment</div>
+          <div class="activity-detail" id="detail-env">Shortcut created & directories verified</div>
+        </div>
+      </div>
+
+      <!-- Activity 2: PHP Runtime Detection -->
+      <div class="activity-item status-running" id="step-php">
+        <div class="activity-icon"><div class="mini-spinner"></div></div>
+        <div class="activity-content">
+          <div class="activity-title">PHP Runtime Engine</div>
+          <div class="activity-detail" id="detail-php">Scanning system for PHP 8.2+ runtime...</div>
+        </div>
+      </div>
+
+      <!-- Activity 3: SQLite Database & Extensions -->
+      <div class="activity-item status-pending" id="step-db">
+        <div class="activity-icon">•</div>
+        <div class="activity-content">
+          <div class="activity-title">Database & Extensions</div>
+          <div class="activity-detail" id="detail-db">Waiting for runtime verification...</div>
+        </div>
+      </div>
+
+      <!-- Activity 4: Local Application Server -->
+      <div class="activity-item status-pending" id="step-server">
+        <div class="activity-icon">•</div>
+        <div class="activity-content">
+          <div class="activity-title">TunnelDeck Local Server</div>
+          <div class="activity-detail" id="detail-server">Waiting to start server...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Alert Card (Visible only when stuck or an error occurs) -->
+    <div class="error-card" id="error-card">
+      <div class="error-header">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <span id="error-title">Startup Error Encountered</span>
+      </div>
+      <div class="error-msg" id="error-message">Unable to start TunnelDeck local server.</div>
+      <div class="error-log-box" id="error-log"></div>
+      <div class="error-actions">
+        <button class="btn btn-primary" onclick="window.location.reload()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+          Retry Startup
+        </button>
+        <button class="btn btn-secondary" id="btn-copy" onclick="copyErrorDetails()">
+          Copy Error Details
+        </button>
+      </div>
+    </div>
+
+    <div class="footer" id="footer-text">
+      Please keep this window open while the local engine boots.
+    </div>
+  </div>
+
+  <script>
+    // Disable Right-Click Context Menu & Developer Tool Shortcuts in App Mode
+    document.addEventListener('contextmenu', e => { e.preventDefault(); return false; }, true);
+    document.addEventListener('keydown', e => {
+      const k = e.key ? e.key.toUpperCase() : '';
+      if (k === 'F12' || k === 'F5' || (e.ctrlKey || e.metaKey) && (e.shiftKey && ['I','J','C','R'].includes(k) || ['U','S','R'].includes(k)) || e.shiftKey && k === 'F10') {
+        e.preventDefault();
+        return false;
+      }
+    }, true);
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const port = urlParams.get('port');
+    const targetUrl = `http://127.0.0.1:${port}`;
+    let pingCount = 0;
+    let isConnected = false;
+    let hasEncounteredError = false;
+    let isDownloading = false;
+
+    if (port) {
+      document.getElementById('port-badge').innerText = `Port :${port}`;
+    } else {
+      showError('Configuration Error', 'No local port was specified by launcher. Please run App.exe.');
+    }
+
+    // Helper to update visual step
+    function updateStep(stepId, state, detailText) {
+      const item = document.getElementById(stepId);
+      if (!item) return;
+
+      item.className = 'activity-item status-' + state;
+      const icon = item.querySelector('.activity-icon');
+      const detail = item.querySelector('.activity-detail');
+
+      if (detailText) {
+        detail.innerText = detailText;
+      }
+
+      if (state === 'done') {
+        icon.innerHTML = '✓';
+      } else if (state === 'running') {
+        icon.innerHTML = '<div class="mini-spinner"></div>';
+        item.classList.add('active');
+      } else if (state === 'error') {
+        icon.innerHTML = '✕';
+        item.classList.add('error');
+      } else {
+        icon.innerHTML = '•';
+      }
+    }
+
+    // Display error card prominently
+    function showError(title, message, logSnippet) {
+      hasEncounteredError = true;
+      document.getElementById('overall-status').innerText = 'Startup failed';
+      document.getElementById('overall-status').style.color = '#dc2626';
+      document.getElementById('error-title').innerText = title;
+      document.getElementById('error-message').innerHTML = message;
+
+      if (logSnippet) {
+        const logBox = document.getElementById('error-log');
+        logBox.innerText = logSnippet;
+        logBox.style.display = 'block';
+      }
+
+      document.getElementById('error-card').style.display = 'block';
+      document.getElementById('footer-text').innerText = 'Resolve the issue above and click Retry Startup.';
+    }
+
+    // Copy error details to clipboard
+    function copyErrorDetails() {
+      const title = document.getElementById('error-title').innerText;
+      const msg = document.getElementById('error-message').innerText;
+      const log = document.getElementById('error-log').innerText;
+      const fullText = `[TunnelDeck Lite Startup Error]\nTitle: ${title}\nDetails: ${msg}\nLogs:\n${log || 'N/A'}`;
+      navigator.clipboard.writeText(fullText).then(() => {
+        const btn = document.getElementById('btn-copy');
+        btn.innerText = 'Copied to Clipboard!';
+        setTimeout(() => { btn.innerText = 'Copy Error Details'; }, 2000);
+      });
+    }
+
+    // Read live status file written by serve.bat
+    async function checkStatusFile() {
+      if (hasEncounteredError || isConnected) return;
+
+      try {
+        const resp = await fetch(`status.json?t=${Date.now()}`);
+        if (resp.ok) {
+          const data = await resp.json();
+          if (data.step === 'php') {
+            if (data.status === 'done') {
+              isDownloading = false;
+              updateStep('step-php', 'done', data.message || 'PHP 8.2+ runtime detected');
+              updateStep('step-db', 'running', 'Verifying SQLite database and extensions...');
+            } else if (data.status === 'downloading') {
+              isDownloading = true;
+              document.getElementById('overall-status').innerText = 'Setting up runtime environment...';
+              updateStep('step-php', 'running', data.message || 'Installing portable PHP 8.4 runtime...');
+            } else if (data.status === 'error') {
+              isDownloading = false;
+              updateStep('step-php', 'error', data.message);
+              showError('PHP Runtime Error', data.message);
+            }
+          } else if (data.step === 'database') {
+            updateStep('step-php', 'done', 'PHP runtime detected');
+            if (data.status === 'done') {
+              updateStep('step-db', 'done', data.message || 'SQLite database ready');
+              updateStep('step-server', 'running', `Starting server on port ${port}...`);
+            } else if (data.status === 'error') {
+              updateStep('step-db', 'error', data.message);
+              showError('Database Configuration Error', data.message);
+            }
+          } else if (data.step === 'server') {
+            updateStep('step-php', 'done', 'PHP runtime detected');
+            updateStep('step-db', 'done', 'SQLite database ready');
+            if (data.status === 'running') {
+              updateStep('step-server', 'running', data.message || `Starting server on port ${port}...`);
+            } else if (data.status === 'error') {
+              updateStep('step-server', 'error', data.message);
+              const logText = await checkStartupLog();
+              showError('Server Startup Error', data.message, logText);
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback: If status.json is unavailable or file access restricted, advance progressive checklist
+        progressiveFallback();
+      }
+    }
+
+    // Progressive visual progression if status.json isn't readable
+    function progressiveFallback() {
+      if (pingCount === 2) {
+        updateStep('step-php', 'done', 'PHP runtime verified');
+        updateStep('step-db', 'running', 'Verifying SQLite database and configuration...');
+      } else if (pingCount === 5) {
+        updateStep('step-db', 'done', 'Database & environment verified');
+        updateStep('step-server', 'running', `Connecting to local server on port ${port}...`);
+      }
+    }
+
+    // Check startup log if available
+    async function checkStartupLog() {
+      try {
+        const resp = await fetch(`src/storage/logs/startup.log?t=${Date.now()}`);
+        if (resp.ok) {
+          const text = await resp.text();
+          if (text && text.trim().length > 0) {
+            return text.trim();
+          }
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    // Main ping loop
+    async function checkServer() {
+      if (hasEncounteredError || isConnected) return;
+
+      if (isDownloading) {
+        pingCount = 0;
+      } else {
+        pingCount++;
+      }
+
+      // Check status file every other ping
+      if (pingCount % 2 === 0) {
+        await checkStatusFile();
+      }
+
+      try {
+        // Ping Laravel server
+        await fetch(targetUrl, { mode: 'no-cors' });
+        
+        // Success: Mark completed and navigate
+        isConnected = true;
+        updateStep('step-php', 'done', 'PHP runtime verified');
+        updateStep('step-db', 'done', 'Database & environment verified');
+        updateStep('step-server', 'done', 'Server online! Redirecting...');
+        document.getElementById('overall-status').innerText = 'Server connected!';
+
+        setTimeout(() => {
+          window.location.replace(targetUrl);
+        }, 300);
+      } catch (err) {
+        // If server hasn't answered after 35 attempts (~10 seconds)
+        if (pingCount === 35) {
+          updateStep('step-server', 'running', 'Server is taking longer than usual to respond...');
+        } 
+        // If server hasn't answered after 60 attempts (~18 seconds)
+        else if (pingCount === 60) {
+          const logText = await checkStartupLog();
+          updateStep('step-server', 'error', `Could not connect to port ${port}`);
+          
+          let tip = `Server did not respond on <b>127.0.0.1:${port}</b>.<br><br><b>Troubleshooting suggestions:</b><br>• Verify that <b>PHP 8.2+</b> is installed.<br>• Make sure <code>pdo_sqlite</code> and <code>sqlite3</code> are enabled in your <code>php.ini</code>.<br>• Verify antivirus or firewall is not blocking localhost port ${port}.`;
+          
+          showError('Connection Timeout', tip, logText);
+          return;
+        }
+
+        setTimeout(checkServer, 300);
+      }
+    }
+
+    if (port) {
+      checkServer();
+    }
+  </script>
+</body>
+</html>

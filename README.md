@@ -16,55 +16,26 @@ A modern, lightweight developer tunnel management platform built as a **pure Lar
 
 ---
 
-## 📁 Project Architecture
+## 🚀 Quick Start (One-Click Launch)
 
-```
-tunneldeck-lite/
-├── src/                                  # Complete Laravel Application (Frontend + Backend)
-│   ├── app/
-│   │   ├── Http/Controllers/
-│   │   │   ├── DashboardController.php   # Loads live metrics, tunnels, domains, activities
-│   │   │   ├── WebAuthController.php     # Session auth, login, logout, password change
-│   │   │   └── Api/                      # JSON API endpoints
-│   │   └── Models/                       # User, Tunnel, Domain, Activity models
-│   ├── database/
-│   │   ├── database.sqlite               # Local SQLite database
-│   │   └── seeders/                      # Default admin & sample data seeders
-│   ├── public/
-│   │   └── js/
-│   │       └── app.js                    # Vanilla JS AJAX client (modals, forms, clipboard)
-│   ├── resources/
-│   │   └── views/
-│   │       ├── auth/
-│   │       │   └── login.blade.php       # Login view with branded logo & "Lite" pill badge
-│   │       ├── layouts/
-│   │       │   └── app.blade.php         # Master Blade layout & toast notification container
-│   │       ├── partials/
-│   │       │   ├── modals.blade.php      # All 8 application modals (Start, Add, Delete, Cloudflare)
-│   │       │   ├── tunnels_table_rows.blade.php # Tunnel list rows
-│   │       │   └── domains_table_rows.blade.php # Domain list rows
-│   │       └── dashboard.blade.php       # Full tabbed dashboard view
-│   ├── routes/
-│   │   └── web.php                       # Unified web & session-authenticated AJAX routes
-│   └── artisan                           # Laravel CLI executable
-└── README.md
-```
+No manual commands, complex PHP configuration, or Node.js required! 
+
+Simply double-click **`App.exe`** in the root directory:
+- ⚡ **Zero Setup:** Automatically detects existing PHP or installs a portable runtime into `.app_data/php`.
+- 🖥️ **Desktop Shortcut:** Automatically creates a convenient TunnelDeck shortcut on your Windows desktop.
+- 🌐 **Instant Launch:** Automatically boots the local engine and opens the application workspace.
 
 ---
 
-## 🛠️ Quick Start (Single Command)
+## 🗑️ Clean Uninstallation
 
-All you need is PHP installed on your machine. No Node.js required!
+To remove installed runtime libraries, cache, and clean up your system at any time:
 
-```bash
-cd src
-
-# Start the Laravel application server
-php artisan serve
-```
-
-Open your browser and navigate to:
-👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
+Simply double-click **`uninstall.exe`** in the root directory:
+- 🧹 **Package & Runtime Cleanup:** Safely removes the installed/bundled portable PHP runtime (`bin/php`) and `.app_data` directory.
+- 🖥️ **Shortcut Removal:** Deletes the TunnelDeck desktop shortcut (`TunnelDeck.lnk`).
+- 🛑 **Process Termination:** Safely terminates any active background PHP or Cloudflared processes.
+- ⚡ **Silent Mode (Optional):** Run `uninstall.exe /silent` from CLI for silent, unattended uninstallation.
 
 ---
 
@@ -91,23 +62,8 @@ Open your browser and navigate to:
    - **Start Tunnel Routing Modal:** Apex domain vs Subdomain selection with auto-updating endpoint previews.
    - **Add New Tunnel Modal:** Input tunnel name and port number.
    - **Custom Delete Modal:** Clean confirmation dialog instead of browser alert.
-3. **Custom Domains:**
-   - Configured domains table with validation badges (`Validated` / `Failed`).
-   - Flush top right-hand Cloudflare setup guide.
-   - Cloudflare instructions modal & domain deletion with custom modal.
-4. **Platform Settings:**
-   - SQLite status, PHP version, Laravel environment, and Cloudflare status.
-   - Right sidebar to update password with toggle to autofill login credentials.
-5. **Global Dynamic Toasts:**
-   - Floating notifications for all actions: tunnel added, tunnel deleted, domain deleted, password saved, etc.
-
----
-
-## 🧪 Testing
-
-Run backend feature and unit tests with PHPUnit:
-
-```bash
-cd src/backend
-./vendor/bin/phpunit
-```
+3. **Platform Settings:**
+   - SQLite status, PHP version, Laravel environment, and Cloudflare engine status.
+   - Profile management, password updates, and licensing synchronization.
+4. **Global Dynamic Notifications:**
+   - Real-time toast notifications for all platform actions (tunnel start/stop, settings changes, network alerts).

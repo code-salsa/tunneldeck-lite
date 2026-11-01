@@ -86,6 +86,18 @@ return [
     | in the dashboard to prevent resource exhaustion.
     |
     */
-    'max_tunnels' => env('CLOUDFLARED_MAX_TUNNELS', 10),
+    'max_tunnels' => env('CLOUDFLARED_MAX_TUNNELS', 5),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Licensing Authority RSA Public Key (Cryptographic Asymmetric Verification)
+    |--------------------------------------------------------------------------
+    |
+    | The official RSA 2048-bit public key used to verify digital license
+    | certificates issued by the licensing server (licensing.tunneldeck.online).
+    | Prevents manual SQLite database tampering.
+    |
+    */
+    'public_key' => env('TUNNELDECK_PUBLIC_KEY', "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAlMDqN7NjMFszBlvDo/di\nhKNkWZz5sUnBSO1nz+d/ctHFuo+7+Q2oclm1B7PwZroZQllztJXAWgfvSagwlyqi\n2JJ0+GwgY6MrNKr32fn2Lg198/KAghGiNNUXreYzrjz/2qdQefU1/SCtkTSIq29q\nmkDdZcF3YhGQJD9vra6oApZ8Qmh28izptwDh/d5QgSaPjZH/eIElSu48bknrAKsF\nz6F1LqHbsWk941aRfEa1o+VGp8k5mTQJlKHLhyt1Jsx6l+xlZHeRfS8aqN64oRlu\nahqcXxy04SCpksVVZf0wp6PRNPEIqI+NWbGxREYaf4Ko60u3pYXOLroi9xpy64c6\n9wIDAQAB\n-----END PUBLIC KEY-----"),
 
 ];

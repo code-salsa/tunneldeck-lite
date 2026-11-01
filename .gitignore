@@ -1,38 +1,53 @@
 # Dependencies
-node_modules/
-src/frontend/node_modules/
-src/backend/vendor/
-
-# Next.js Build
-src/frontend/.next/
-src/frontend/out/
+/node_modules
 
 # Environment files
 .env
 .env.*
 !.env.example
-src/backend/.env
-!src/backend/.env.example
-src/frontend/.env.local
+src/.env.*
+!src/.env.example
+!src/.env
+
+# WebView2 & Edge runtime user data
+/.app_data/
+
+# Temporary archives & Pro Addon packages
+*.zip
+/dist/
+domains-code.zip
+
+# Pro Addon Files (Custom Domains - dynamically downloaded on upgrade)
+src/app/Http/Controllers/Api/DomainController.php
+src/app/Models/CustomDomain.php
+src/app/Services/DomainValidationService.php
+src/public/js/domains.js
+src/resources/views/partials/domains_*.blade.php
+src/routes/domains.php
+
+# Database Migrations (Lite uses schema file instead of migration files)
+src/database/migrations/*.php
+!src/database/migrations/.gitkeep
 
 # Laravel storage & cache
-src/backend/storage/*.key
-src/backend/storage/framework/cache/data/*
-src/backend/storage/framework/sessions/*
-src/backend/storage/framework/views/*
-src/backend/storage/logs/*
-!src/backend/storage/framework/cache/data/.gitignore
-!src/backend/storage/framework/sessions/.gitignore
-!src/backend/storage/framework/views/.gitignore
-!src/backend/storage/logs/.gitignore
+src/storage/*.key
+src/storage/framework/cache/data/*
+src/storage/framework/sessions/*
+src/storage/framework/views/*
+src/storage/logs/*
+!src/storage/framework/cache/data/.gitignore
+!src/storage/framework/sessions/.gitignore
+!src/storage/framework/views/.gitignore
+!src/storage/logs/.gitignore
 
-# SQLite databases
-src/backend/database/*.sqlite
-src/backend/database/*.sqlite-journal
-!src/backend/database/.gitignore
+# PHPUnit & testing caches
+.phpunit.result.cache
+src/.phpunit.result.cache
+src/.phpunit.cache/
 
-# System files
+# System and OS files
 .DS_Store
 Thumbs.db
 *.log
-
+*.sqlite-journal
+status.json

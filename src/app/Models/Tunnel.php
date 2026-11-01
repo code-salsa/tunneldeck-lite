@@ -14,6 +14,7 @@ class Tunnel extends Model
         'custom_domain_id',
         'custom_subdomain',
         'is_root_domain',
+        'is_dummy',
         'name',
         'port',
         'status',
@@ -30,6 +31,7 @@ class Tunnel extends Model
         'port' => 'integer',
         'pid' => 'integer',
         'is_root_domain' => 'boolean',
+        'is_dummy' => 'boolean',
     ];
 
     /**
@@ -61,6 +63,10 @@ class Tunnel extends Model
      */
     public function isRunning(): bool
     {
+        if ($this->is_dummy) {
+            return $this->status === 'running';
+        }
+
         return $this->status === 'running' && !empty($this->pid) && app(\App\Services\ProcessTracker::class)->isPidAlive($this->pid);
     }
 

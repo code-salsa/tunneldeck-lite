@@ -23,29 +23,18 @@ class DatabaseSeeder extends Seeder
                 'name' => 'TunnelDeck Admin',
                 'password' => Hash::make('123456'),
                 'email_verified_at' => now(),
+                'package' => 'lite',
+                'is_onboarded' => false,
+                'city' => null,
+                'country' => null,
+                'currency' => 'USD',
+                'license_synced_at' => null,
+                'coffee_donated_at' => null,
             ]
         );
 
-        // Sample Tunnels
-        Tunnel::updateOrCreate(
-            ['port' => 8000],
-            [
-                'user_id' => $user->id,
-                'name' => 'Backend API Tunnel',
-                'status' => 'stopped',
-                'custom_subdomain' => 'api-dev',
-            ]
-        );
-
-        Tunnel::updateOrCreate(
-            ['port' => 3001],
-            [
-                'user_id' => $user->id,
-                'name' => 'NextJS Frontend Preview',
-                'status' => 'stopped',
-                'custom_subdomain' => 'frontend-app',
-            ]
-        );
+        // Sample Simulation Tunnels
+        \App\Http\Controllers\OnboardingController::seedDummyTunnels($user->id);
 
         // Seed Domains matching the screenshot (if CustomDomain addon is installed)
         if (class_exists(CustomDomain::class)) {
