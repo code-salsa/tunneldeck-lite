@@ -161,6 +161,7 @@ class DashboardController extends Controller
         return view('dashboard', [
             'user' => $user,
             'tunnels' => $tunnels,
+            'totalTunnels' => $totalTunnels,
             'metrics' => $metrics,
             'activities' => $activities,
             'domains' => $domains,

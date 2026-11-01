@@ -7,6 +7,7 @@
     $isSimulationMode = ($isExploring ?? false) || $hasDummyTunnels;
     $userCurrency = $userCurrency ?? strtoupper($user->currency ?? 'INR');
     $proPriceDisplay = $proPriceDisplay ?? (($userCurrency === 'INR') ? '₹6,999' : '$99');
+    $totalTunnels = $totalTunnels ?? ($tunnels ? $tunnels->count() : 0);
 @endphp
 
 @section('content')
@@ -776,7 +777,7 @@
                     <!-- Tunnels Pagination Bar -->
                     <div id="tunnels-pagination-bar" class="px-6 py-3.5 border-t border-slate-200/80 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
                         <div id="tunnels-pagination-info" class="font-medium text-slate-600">
-                            Showing <span id="tunnels-pagination-start" class="font-bold text-slate-800">1</span> to <span id="tunnels-pagination-end" class="font-bold text-slate-800">{{ min(20, $totalTunnels) }}</span> of <span id="tunnels-pagination-total" class="font-bold text-slate-800">{{ $totalTunnels }}</span> tunnels
+                            Showing <span id="tunnels-pagination-start" class="font-bold text-slate-800">{{ $totalTunnels > 0 ? 1 : 0 }}</span> to <span id="tunnels-pagination-end" class="font-bold text-slate-800">{{ min(20, $totalTunnels) }}</span> of <span id="tunnels-pagination-total" class="font-bold text-slate-800">{{ $totalTunnels }}</span> tunnels
                         </div>
                         <div class="flex items-center gap-1.5" id="tunnels-pagination-controls">
                             <!-- Numbered pagination dynamically populated by JavaScript -->

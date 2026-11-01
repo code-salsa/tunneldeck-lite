@@ -1788,10 +1788,8 @@ function renderTunnelsPaginationControls(totalPages, currentPage) {
     const container = document.getElementById('tunnels-pagination-controls');
     if (!container) return;
 
-    if (totalPages <= 1) {
-        container.innerHTML = '';
-        return;
-    }
+    totalPages = Math.max(1, totalPages || 1);
+    currentPage = Math.max(1, Math.min(currentPage || 1, totalPages));
 
     let html = '';
 
@@ -1801,7 +1799,7 @@ function renderTunnelsPaginationControls(totalPages, currentPage) {
         <button type="button"
                 onclick="goToTunnelsPage(${currentPage - 1})"
                 ${prevDisabled ? 'disabled' : ''}
-                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs'}">
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition flex items-center gap-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs cursor-pointer'}">
             <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
             <span>Prev</span>
         </button>
