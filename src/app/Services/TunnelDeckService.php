@@ -38,7 +38,7 @@ class TunnelDeckService
         return null;
     }
 
-    protected function client(int $timeout = 15)
+    protected function client(int $timeout = 30)
     {
         $hwid = app(HardwareFingerprintService::class)->getHwid();
 
@@ -61,7 +61,7 @@ class TunnelDeckService
     /**
      * Post with resilient SSL fallback for environments with custom corporate proxy/antivirus certificates.
      */
-    public function safePost(string $url, array $data = [], int $timeout = 15): ?Response
+    public function safePost(string $url, array $data = [], int $timeout = 30): ?Response
     {
         try {
             return $this->client($timeout)->post($url, $data);
@@ -89,7 +89,7 @@ class TunnelDeckService
     /**
      * Get with resilient SSL fallback.
      */
-    public function safeGet(string $url, array $query = [], int $timeout = 15): ?Response
+    public function safeGet(string $url, array $query = [], int $timeout = 30): ?Response
     {
         try {
             return $this->client($timeout)->get($url, $query);
@@ -130,7 +130,7 @@ class TunnelDeckService
             $data['hostname'] = $data['hostname'] ?? $sys['hostname'];
             $data['system_info'] = array_merge($sys, $data['system_info'] ?? []);
 
-            return $this->safePost('/users/register', $data);
+            return $this->safePost('/users/register', $data, 35);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService registerUser error: ' . $e->getMessage(), ['data' => $data]);
             return null;
@@ -153,7 +153,7 @@ class TunnelDeckService
             $data['hostname'] = $data['hostname'] ?? $sys['hostname'];
             $data['system_info'] = array_merge($sys, $data['system_info'] ?? []);
 
-            return $this->safePost("/users/{$userEmailOrId}/complete-onboarding", $data);
+            return $this->safePost("/users/{$userEmailOrId}/complete-onboarding", $data, 45);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService completeOnboarding error: ' . $e->getMessage(), ['email' => $userEmailOrId, 'data' => $data]);
             return null;
@@ -169,7 +169,7 @@ class TunnelDeckService
             return $this->safePost('/auth/send-otp', [
                 'email' => $email,
                 'name' => $name,
-            ]);
+            ], 60);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService sendOtp error: ' . $e->getMessage(), ['email' => $email]);
             return null;
@@ -185,7 +185,7 @@ class TunnelDeckService
             return $this->safePost('/auth/verify-otp', [
                 'email' => $email,
                 'otp' => $otp,
-            ]);
+            ], 30);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService verifyOtp error: ' . $e->getMessage(), ['email' => $email, 'otp' => $otp]);
             return null;

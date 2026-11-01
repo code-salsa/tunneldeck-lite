@@ -25,7 +25,7 @@ class OnboardingController extends Controller
         $response = $tunnelDeck->sendOtp($validated['email'], $validated['name'] ?? null);
 
         if (!$response || $response->failed() || !$response->json('success')) {
-            $msg = $response?->json('message') ?: 'Could not dispatch verification email. Please check your internet connection.';
+            $msg = $response?->json('message') ?: 'Could not dispatch verification email. The licensing mail service took longer than expected. Please click Resend Code in a moment.';
             return response()->json([
                 'success' => false,
                 'message' => $msg,
