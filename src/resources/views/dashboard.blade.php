@@ -673,7 +673,7 @@
                                         <span class="font-extrabold text-sm text-amber-300">TunnelDeck Pro</span>
                                         <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-400 text-amber-950">Recommended</span>
                                     </div>
-                                    <span class="text-xs font-black text-amber-300">{{ $proPriceDisplay }}</span>
+                                    <span id="comparison-pro-card-price" class="text-xs font-black text-amber-300">{{ $proPriceDisplay }}</span>
                                 </div>
                                 <ul class="text-xs space-y-2 text-white">
                                     <li class="flex items-start gap-2">

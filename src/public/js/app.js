@@ -3182,6 +3182,11 @@ function updatePaymentUIConfig(config) {
         comparisonPrice.textContent = formatted;
     }
 
+    const comparisonCardPrice = document.getElementById('comparison-pro-card-price');
+    if (comparisonCardPrice) {
+        comparisonCardPrice.textContent = formatted;
+    }
+
     const comparisonValidity = document.getElementById('comparison-pro-validity');
     if (comparisonValidity) {
         comparisonValidity.textContent = '/ per year';
