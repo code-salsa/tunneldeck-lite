@@ -207,14 +207,29 @@ class OnboardingController extends Controller
 
         Auth::login($user);
 
-        // Sync to Licensing Server: save email and name
-        $tunnelDeck->registerUser([
+        // Sync to Licensing Server: save email and name as exploring trial user
+        $regResponse = $tunnelDeck->registerUser([
             'name' => $nameToSave,
             'email' => $user->email,
             'city' => $user->city,
             'country' => $user->country,
             'package' => $user->package ?? 'lite',
+            'is_exploring' => true,
+            'onboarding_status' => 'exploring',
         ]);
+
+        if ($regResponse && $regResponse->successful()) {
+            \Illuminate\Support\Facades\Log::info("User {$user->email} successfully registered on licensing portal as exploring trial user.");
+            $regData = $regResponse->json('data') ?? [];
+            if (!empty($regData['signed_license']) && is_array($regData['signed_license'])) {
+                app(\App\Services\LicenseSignatureVerifier::class)->storeVerifiedLicense(
+                    $user->email,
+                    $regData['signed_license']
+                );
+            }
+        } else {
+            \Illuminate\Support\Facades\Log::warning("Licensing portal registration returned non-200 for {$user->email}: " . ($regResponse ? $regResponse->status() : 'null response'));
+        }
 
         $tunnelDeck->logAccess($user->email, [
             'action' => 'explore_platform',
@@ -225,6 +240,7 @@ class OnboardingController extends Controller
 
         $tunnelDeck->logActivity($user->email, 'explore_started', "User {$user->email} entered platform exploration", [
             'package' => 'lite',
+            'onboarding_status' => 'exploring',
         ]);
 
         Activity::create([

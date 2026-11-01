@@ -14,20 +14,104 @@ class TunnelDeckService
     public function __construct()
     {
         $this->baseUrl = rtrim(config('services.tunneldeck.url', 'https://licensing.tunneldeck.online/api/v1'), '/');
-        $this->token = config('services.tunneldeck.token', 'td_live_0b22af8832fc33b46b2001073347bb832c9b68c59eed1eb8');
+        $this->token = config('services.tunneldeck.token') ?: 'td_live_0b22af8832fc33b46b2001073347bb832c9b68c59eed1eb8';
     }
 
-    protected function client()
+    /**
+     * Resolve CA certificate bundle path for secure HTTPS API calls.
+     */
+    public static function getCaBundlePath(): ?string
+    {
+        $candidates = [
+            storage_path('cacert.pem'),
+            base_path('../bin/php/cacert.pem'),
+            base_path('cacert.pem'),
+            __DIR__ . '/cacert.pem',
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (!empty($candidate) && file_exists($candidate)) {
+                return realpath($candidate) ?: $candidate;
+            }
+        }
+
+        return null;
+    }
+
+    protected function client(int $timeout = 15)
     {
         $hwid = app(HardwareFingerprintService::class)->getHwid();
 
-        return Http::withToken($this->token)
+        $client = Http::withToken($this->token)
             ->withHeaders([
                 'X-DEVICE-HWID' => $hwid,
             ])
             ->acceptJson()
             ->baseUrl($this->baseUrl)
-            ->timeout(4);
+            ->timeout($timeout);
+
+        $caPath = self::getCaBundlePath();
+        if ($caPath) {
+            $client = $client->withOptions(['verify' => $caPath]);
+        }
+
+        return $client;
+    }
+
+    /**
+     * Post with resilient SSL fallback for environments with custom corporate proxy/antivirus certificates.
+     */
+    public function safePost(string $url, array $data = [], int $timeout = 15): ?Response
+    {
+        try {
+            return $this->client($timeout)->post($url, $data);
+        } catch (\Throwable $e) {
+            if (str_contains($e->getMessage(), 'cURL error 60') || str_contains($e->getMessage(), 'certificate') || str_contains($e->getMessage(), 'cURL error 77')) {
+                Log::warning("TunnelDeckService SSL fallback triggered for POST {$url}: " . $e->getMessage());
+                try {
+                    $hwid = app(HardwareFingerprintService::class)->getHwid();
+                    return Http::withToken($this->token)
+                        ->withHeaders(['X-DEVICE-HWID' => $hwid])
+                        ->acceptJson()
+                        ->baseUrl($this->baseUrl)
+                        ->timeout($timeout)
+                        ->withOptions(['verify' => false])
+                        ->post($url, $data);
+                } catch (\Throwable $ex2) {
+                    Log::error("TunnelDeckService safePost fallback failed: " . $ex2->getMessage());
+                    return null;
+                }
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Get with resilient SSL fallback.
+     */
+    public function safeGet(string $url, array $query = [], int $timeout = 15): ?Response
+    {
+        try {
+            return $this->client($timeout)->get($url, $query);
+        } catch (\Throwable $e) {
+            if (str_contains($e->getMessage(), 'cURL error 60') || str_contains($e->getMessage(), 'certificate') || str_contains($e->getMessage(), 'cURL error 77')) {
+                Log::warning("TunnelDeckService SSL fallback triggered for GET {$url}: " . $e->getMessage());
+                try {
+                    $hwid = app(HardwareFingerprintService::class)->getHwid();
+                    return Http::withToken($this->token)
+                        ->withHeaders(['X-DEVICE-HWID' => $hwid])
+                        ->acceptJson()
+                        ->baseUrl($this->baseUrl)
+                        ->timeout($timeout)
+                        ->withOptions(['verify' => false])
+                        ->get($url, $query);
+                } catch (\Throwable $ex2) {
+                    Log::error("TunnelDeckService safeGet fallback failed: " . $ex2->getMessage());
+                    return null;
+                }
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -46,7 +130,7 @@ class TunnelDeckService
             $data['hostname'] = $data['hostname'] ?? $sys['hostname'];
             $data['system_info'] = array_merge($sys, $data['system_info'] ?? []);
 
-            return $this->client()->post('/users/register', $data);
+            return $this->safePost('/users/register', $data);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService registerUser error: ' . $e->getMessage(), ['data' => $data]);
             return null;
@@ -69,7 +153,7 @@ class TunnelDeckService
             $data['hostname'] = $data['hostname'] ?? $sys['hostname'];
             $data['system_info'] = array_merge($sys, $data['system_info'] ?? []);
 
-            return $this->client()->post("/users/{$userEmailOrId}/complete-onboarding", $data);
+            return $this->safePost("/users/{$userEmailOrId}/complete-onboarding", $data);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService completeOnboarding error: ' . $e->getMessage(), ['email' => $userEmailOrId, 'data' => $data]);
             return null;
@@ -82,7 +166,7 @@ class TunnelDeckService
     public function sendOtp(string $email, ?string $name = null): ?Response
     {
         try {
-            return $this->client()->post('/auth/send-otp', [
+            return $this->safePost('/auth/send-otp', [
                 'email' => $email,
                 'name' => $name,
             ]);
@@ -98,7 +182,7 @@ class TunnelDeckService
     public function verifyOtp(string $email, string $otp): ?Response
     {
         try {
-            return $this->client()->post('/auth/verify-otp', [
+            return $this->safePost('/auth/verify-otp', [
                 'email' => $email,
                 'otp' => $otp,
             ]);
@@ -121,6 +205,7 @@ class TunnelDeckService
             'package' => $user->package ?? 'lite',
             'onboarding_status' => 'exploring',
             'is_onboarded' => false,
+            'is_exploring' => true,
         ], $additional);
 
         return $this->registerUser($payload);
@@ -132,7 +217,7 @@ class TunnelDeckService
     public function logAccess(string $userEmailOrId, array $payload = []): ?Response
     {
         try {
-            return $this->client()->post("/users/{$userEmailOrId}/access-logs", $payload);
+            return $this->safePost("/users/{$userEmailOrId}/access-logs", $payload, 10);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService logAccess error: ' . $e->getMessage(), ['payload' => $payload]);
             return null;
@@ -145,11 +230,11 @@ class TunnelDeckService
     public function logActivity(string $userEmailOrId, string $action, ?string $description = null, array $metadata = []): ?Response
     {
         try {
-            return $this->client()->post("/users/{$userEmailOrId}/activity-logs", [
+            return $this->safePost("/users/{$userEmailOrId}/activity-logs", [
                 'action' => $action,
                 'description' => $description,
                 'metadata' => $metadata,
-            ]);
+            ], 10);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService logActivity error: ' . $e->getMessage());
             return null;
@@ -162,7 +247,7 @@ class TunnelDeckService
     public function logUpgrade(string $userEmailOrId, string $toPackage, float $amount = 0.0, array $extra = []): ?Response
     {
         try {
-            return $this->client()->post("/users/{$userEmailOrId}/upgrades", array_merge([
+            return $this->safePost("/users/{$userEmailOrId}/upgrades", array_merge([
                 'to_package' => $toPackage,
                 'amount' => $amount,
             ], $extra));
@@ -178,7 +263,7 @@ class TunnelDeckService
     public function getUser(string $userEmailOrId): ?Response
     {
         try {
-            return $this->client()->get("/users/{$userEmailOrId}");
+            return $this->safeGet("/users/{$userEmailOrId}", [], 10);
         } catch (\Throwable $e) {
             Log::error('TunnelDeckService getUser error: ' . $e->getMessage());
             return null;
@@ -444,10 +529,11 @@ class TunnelDeckService
                     'currency' => $data['currency'] ?? 'INR',
                     'pro_plan' => [
                         'name' => 'Pro',
-                        'price' => 1499.00,
-                        'price_inr' => 1499.00,
-                        'price_usd' => 19.00,
+                        'price' => 6999.00,
+                        'price_inr' => 6999.00,
+                        'price_usd' => 99.00,
                         'currency' => $data['currency'] ?? 'INR',
+                        'billing' => 'annual',
                         'features' => ['Unlimited active tunnels', 'Unlimited custom domains'],
                     ],
                 ];
@@ -467,10 +553,11 @@ class TunnelDeckService
             'currency' => 'INR',
             'pro_plan' => [
                 'name' => 'Pro',
-                'price' => 1499.00,
-                'price_inr' => 1499.00,
-                'price_usd' => 19.00,
+                'price' => 6999.00,
+                'price_inr' => 6999.00,
+                'price_usd' => 99.00,
                 'currency' => 'INR',
+                'billing' => 'annual',
                 'features' => ['Unlimited active tunnels', 'Unlimited custom domains'],
             ],
         ];

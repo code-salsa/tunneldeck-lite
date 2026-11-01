@@ -5,8 +5,8 @@
 @php
     $hasDummyTunnels = $tunnels->contains(fn($t) => (bool)($t->is_dummy ?? false));
     $isSimulationMode = ($isExploring ?? false) || $hasDummyTunnels;
-    $userCurrency = strtoupper($user->currency ?? 'INR');
-    $proPriceDisplay = ($userCurrency === 'INR') ? '₹1,499' : '$19';
+    $userCurrency = $userCurrency ?? strtoupper($user->currency ?? 'INR');
+    $proPriceDisplay = $proPriceDisplay ?? (($userCurrency === 'INR') ? '₹6,999' : '$99');
 @endphp
 
 @section('content')
@@ -616,8 +616,8 @@
                             <!-- Price & Interactive Checkout Button -->
                             <div class="flex flex-col items-start md:items-end gap-2 shrink-0">
                                 <div class="flex items-baseline gap-1.5">
-                                    <span class="text-3xl font-black text-amber-300">{{ $proPriceDisplay }}</span>
-                                    <span class="text-xs text-indigo-200 font-medium">/ lifetime license</span>
+                                    <span class="text-3xl font-black text-amber-300" id="comparison-pro-price">{{ $proPriceDisplay }}</span>
+                                    <span class="text-xs text-indigo-200 font-medium" id="comparison-pro-validity">/ per year</span>
                                 </div>
                                 <button type="button" onclick="openProPaymentCheckout(this)" class="px-5 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-black text-xs shadow-lg shadow-amber-400/25 transition flex items-center gap-2 cursor-pointer transform hover:scale-[1.02] active:scale-[0.98]">
                                     <i data-lucide="zap" class="w-4 h-4 fill-current"></i>
@@ -768,9 +768,19 @@
                                 </tr>
                             </thead>
                             <tbody id="tunnels-table-body" class="divide-y divide-slate-100">
-                                @include('partials.tunnels_table_rows', ['tunnels' => $tunnels])
+                                @include('partials.tunnels_table_rows', ['tunnels' => $tunnels->take(20)])
                             </tbody>
                         </table>
+                    </div>
+
+                    <!-- Tunnels Pagination Bar -->
+                    <div id="tunnels-pagination-bar" class="px-6 py-3.5 border-t border-slate-200/80 bg-slate-50/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+                        <div id="tunnels-pagination-info" class="font-medium text-slate-600">
+                            Showing <span id="tunnels-pagination-start" class="font-bold text-slate-800">1</span> to <span id="tunnels-pagination-end" class="font-bold text-slate-800">{{ min(20, $totalTunnels) }}</span> of <span id="tunnels-pagination-total" class="font-bold text-slate-800">{{ $totalTunnels }}</span> tunnels
+                        </div>
+                        <div class="flex items-center gap-1.5" id="tunnels-pagination-controls">
+                            <!-- Numbered pagination dynamically populated by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1114,6 +1124,7 @@
 <script>
     window.IS_SIMULATION_MODE = {{ $isSimulationMode ? 'true' : 'false' }};
     window.IS_ONBOARDED = {{ $user->is_onboarded ? 'true' : 'false' }};
+    window.INITIAL_TUNNELS = @json($tunnels);
 </script>
 <script src="{{ asset('js/app.js') }}"></script>
 @if(file_exists(public_path('js/domains.js')))

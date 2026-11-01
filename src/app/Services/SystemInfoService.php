@@ -100,8 +100,13 @@ class SystemInfoService
         ];
 
         // 1. Try ipwho.is (fast, free, returns JSON with country, city, flag)
+        $caPath = TunnelDeckService::getCaBundlePath();
         try {
-            $resp = Http::timeout(1.5)->acceptJson()->get('https://ipwho.is/');
+            $req = Http::timeout(2)->acceptJson();
+            if ($caPath) {
+                $req = $req->withOptions(['verify' => $caPath]);
+            }
+            $resp = $req->get('https://ipwho.is/');
             if ($resp->successful() && $resp->json('success') !== false) {
                 $json = $resp->json();
                 $details['ip'] = $json['ip'] ?? null;
@@ -118,7 +123,11 @@ class SystemInfoService
         // 2. Fallback to api.ipify.org if IP is still empty
         if (empty($details['ip'])) {
             try {
-                $resp2 = Http::timeout(1.2)->get('https://api.ipify.org?format=json');
+                $req2 = Http::timeout(2);
+                if ($caPath) {
+                    $req2 = $req2->withOptions(['verify' => $caPath]);
+                }
+                $resp2 = $req2->get('https://api.ipify.org?format=json');
                 if ($resp2->successful()) {
                     $details['ip'] = $resp2->json('ip');
                 }

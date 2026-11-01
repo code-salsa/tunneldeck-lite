@@ -138,6 +138,26 @@ class DashboardController extends Controller
             'message' => $totalTunnels >= 5 ? 'You have reached the number of allowed tunnel creation. Upgrade to a pro plan to enjoy unlimited tunnels.' : null,
         ];
 
+        // Retrieve dynamic pricing from licensing API
+        $paymentConfig = $this->tunnelDeck->getPaymentConfig();
+        $net = app(\App\Services\SystemInfoService::class)->getPublicNetworkDetails();
+        $countryCode = strtoupper((string)($net['country_code'] ?? ($net['country'] ?? '')));
+        $isIndia = in_array($countryCode, ['IN', 'INDIA', 'BHARAT']) 
+            || strtoupper((string)($user?->currency ?? '')) === 'INR' 
+            || in_array(strtoupper((string)($user?->country ?? '')), ['IN', 'INDIA', 'BHARAT']);
+
+        $proPlan = $paymentConfig['pro_plan'] ?? [];
+        $priceInr = $proPlan['price_inr'] ?? ($proPlan['price'] ?? 6999);
+        $priceUsd = $proPlan['price_usd'] ?? 99;
+
+        if ($isIndia) {
+            $userCurrency = 'INR';
+            $proPriceDisplay = '₹' . number_format((float) $priceInr);
+        } else {
+            $userCurrency = 'USD';
+            $proPriceDisplay = '$' . number_format((float) $priceUsd);
+        }
+
         return view('dashboard', [
             'user' => $user,
             'tunnels' => $tunnels,
@@ -147,6 +167,8 @@ class DashboardController extends Controller
             'limitInfo' => $limitInfo,
             'isLimitReached' => (bool) ($limitInfo['limit_reached'] ?? false),
             'isExploring' => $isExploring,
+            'userCurrency' => $userCurrency,
+            'proPriceDisplay' => $proPriceDisplay,
         ]);
     }
 }

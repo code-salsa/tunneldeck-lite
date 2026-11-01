@@ -167,10 +167,10 @@ if not exist "%~dp0src\database\database.sqlite" (
 
 echo {"step":"database","status":"done","message":"SQLite database and environment ready"} > "%~dp0status.json"
 
-:: 11. Run server directly with built-in router
+:: 11. Run server directly with built-in router and bundled SSL CA bundle
 echo {"step":"server","status":"running","message":"Starting local server on port !PORT!..."} > "%~dp0status.json"
 cd /d "%~dp0src"
-"!PHP_CMD!" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" > "%~dp0src\storage\logs\startup.log" 2>&1
+"!PHP_CMD!" -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" > "%~dp0src\storage\logs\startup.log" 2>&1
 
 :: If server stops unexpectedly
 echo {"step":"server","status":"error","message":"Local server stopped unexpectedly. Check src/storage/logs/startup.log for error details."} > "%~dp0status.json"

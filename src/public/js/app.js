@@ -1154,6 +1154,8 @@ async function executeDeleteTunnel() {
 /* ======================================================== */
 const selectedTunnelIds = new Set();
 let cachedTunnelsList = [];
+let currentTunnelsPage = 1;
+const tunnelsPerPage = 20;
 
 function escapeHtml(str) {
     if (!str && str !== 0) return '';
@@ -1625,6 +1627,14 @@ function renderTunnelsTableRows(tunnels) {
     }
 
     if (tunnels.length === 0) {
+        const startEl = document.getElementById('tunnels-pagination-start');
+        const endEl = document.getElementById('tunnels-pagination-end');
+        const totalEl = document.getElementById('tunnels-pagination-total');
+        if (startEl) startEl.textContent = '0';
+        if (endEl) endEl.textContent = '0';
+        if (totalEl) totalEl.textContent = '0';
+        renderTunnelsPaginationControls(1, 1);
+
         tbody.innerHTML = `
             <tr>
                 <td colspan="7" class="py-16 text-center text-slate-500 text-sm">
@@ -1641,7 +1651,31 @@ function renderTunnelsTableRows(tunnels) {
         return;
     }
 
-    tbody.innerHTML = tunnels.map(t => {
+    const total = cachedTunnelsList.length;
+    const totalPages = Math.max(1, Math.ceil(total / tunnelsPerPage));
+    if (currentTunnelsPage > totalPages) {
+        currentTunnelsPage = totalPages;
+    }
+    if (currentTunnelsPage < 1) {
+        currentTunnelsPage = 1;
+    }
+
+    const startIndex = (currentTunnelsPage - 1) * tunnelsPerPage;
+    const endIndex = Math.min(startIndex + tunnelsPerPage, total);
+    const startDisplay = total === 0 ? 0 : startIndex + 1;
+
+    const startEl = document.getElementById('tunnels-pagination-start');
+    const endEl = document.getElementById('tunnels-pagination-end');
+    const totalEl = document.getElementById('tunnels-pagination-total');
+    if (startEl) startEl.textContent = startDisplay;
+    if (endEl) endEl.textContent = endIndex;
+    if (totalEl) totalEl.textContent = total;
+
+    renderTunnelsPaginationControls(totalPages, currentTunnelsPage);
+
+    const pageItems = cachedTunnelsList.slice(startIndex, endIndex);
+
+    tbody.innerHTML = pageItems.map(t => {
         const isRunning = t.status === 'running';
         const isStarting = t.status === 'starting';
         const isChecked = selectedTunnelIds.has(t.id);
@@ -1745,10 +1779,91 @@ function renderTunnelsTableRows(tunnels) {
 
     updateSelectAllCheckboxState();
     updateBulkActionBar();
-    syncDummyTunnelTimers(tunnels);
+    syncDummyTunnelTimers(pageItems);
 
     if (window.lucide) window.lucide.createIcons();
 }
+
+function renderTunnelsPaginationControls(totalPages, currentPage) {
+    const container = document.getElementById('tunnels-pagination-controls');
+    if (!container) return;
+
+    if (totalPages <= 1) {
+        container.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Prev Button
+    const prevDisabled = currentPage === 1;
+    html += `
+        <button type="button"
+                onclick="goToTunnelsPage(${currentPage - 1})"
+                ${prevDisabled ? 'disabled' : ''}
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${prevDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs'}">
+            <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+            <span>Prev</span>
+        </button>
+    `;
+
+    // Calculate pages to show
+    const pages = [];
+    if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+        if (currentPage <= 4) {
+            pages.push(1, 2, 3, 4, 5, '...', totalPages);
+        } else if (currentPage >= totalPages - 3) {
+            pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+        } else {
+            pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+        }
+    }
+
+    pages.forEach(p => {
+        if (p === '...') {
+            html += `<span class="px-2 py-1 text-xs text-slate-400 font-bold select-none">&hellip;</span>`;
+        } else if (p === currentPage) {
+            html += `
+                <button type="button"
+                        class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#100091] text-white shadow-2xs cursor-default">
+                    ${p}
+                </button>
+            `;
+        } else {
+            html += `
+                <button type="button"
+                        onclick="goToTunnelsPage(${p})"
+                        class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition cursor-pointer">
+                    ${p}
+                </button>
+            `;
+        }
+    });
+
+    // Next Button
+    const nextDisabled = currentPage === totalPages;
+    html += `
+        <button type="button"
+                onclick="goToTunnelsPage(${currentPage + 1})"
+                ${nextDisabled ? 'disabled' : ''}
+                class="px-2.5 py-1.5 rounded-lg border text-xs font-semibold transition cursor-pointer flex items-center gap-1 ${nextDisabled ? 'border-slate-200 text-slate-300 cursor-not-allowed bg-slate-50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50 shadow-2xs'}">
+            <span>Next</span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+        </button>
+    `;
+
+    container.innerHTML = html;
+    if (window.lucide) window.lucide.createIcons();
+}
+
+function goToTunnelsPage(page) {
+    if (page < 1) return;
+    currentTunnelsPage = page;
+    renderTunnelsTableRows(cachedTunnelsList);
+}
+window.goToTunnelsPage = goToTunnelsPage;
 
 function renderDashboardOverviewTunnels(tunnels) {
     const container = document.getElementById('dashboard-overview-tunnels');
@@ -3040,8 +3155,11 @@ async function fetchPaymentConfig() {
         key_id: 'rzp_test_TuXla2n6Mm2F27',
         currency: 'INR',
         pro_plan: {
-            price: 1499,
+            price: 6999,
+            price_inr: 6999,
+            price_usd: 99,
             currency: 'INR',
+            billing: 'annual',
         }
     };
     return cachedPaymentConfig;
@@ -3049,10 +3167,26 @@ async function fetchPaymentConfig() {
 
 function updatePaymentUIConfig(config) {
     if (!config) return;
+    const isUSD = (config.currency === 'USD') || (config.pro_plan && config.pro_plan.currency === 'USD');
+    const symbol = isUSD ? '$' : '₹';
+    const priceVal = isUSD
+        ? (config.pro_plan?.price_usd || config.pro_plan?.price || 99)
+        : (config.pro_plan?.price_inr || config.pro_plan?.price || 6999);
+    const formatted = `${symbol}${Number(priceVal).toLocaleString()}`;
+
     const priceBadge = document.getElementById('sidebar-pro-price-badge');
-    if (priceBadge && config.pro_plan && config.pro_plan.price) {
-        const symbol = (config.currency === 'USD') ? '$' : '₹';
-        priceBadge.textContent = `${symbol}${Number(config.pro_plan.price).toLocaleString()}`;
+    if (priceBadge) {
+        priceBadge.textContent = formatted;
+    }
+
+    const comparisonPrice = document.getElementById('comparison-pro-price');
+    if (comparisonPrice) {
+        comparisonPrice.textContent = formatted;
+    }
+
+    const comparisonValidity = document.getElementById('comparison-pro-validity');
+    if (comparisonValidity) {
+        comparisonValidity.textContent = '/ per year';
     }
 }
 
@@ -3411,6 +3545,9 @@ async function handleCoffeePaymentCallback(rzpResponse, amount, currency, messag
 
 // Pre-fetch payment configuration and sync state on initial load
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.INITIAL_TUNNELS && Array.isArray(window.INITIAL_TUNNELS)) {
+        renderTunnelsTableRows(window.INITIAL_TUNNELS);
+    }
     fetchPaymentConfig();
     fetchTunnelLimit();
     updateSelectAllCheckboxState();

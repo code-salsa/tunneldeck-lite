@@ -18,6 +18,26 @@ class PaymentController extends Controller
     public function config(TunnelDeckService $tunnelDeck): JsonResponse
     {
         $config = $tunnelDeck->getPaymentConfig();
+        $user = Auth::user();
+        $net = app(\App\Services\SystemInfoService::class)->getPublicNetworkDetails();
+        $countryCode = strtoupper((string)($net['country_code'] ?? ($net['country'] ?? '')));
+        $isIndia = in_array($countryCode, ['IN', 'INDIA', 'BHARAT']) 
+            || strtoupper((string)($user?->currency ?? '')) === 'INR' 
+            || in_array(strtoupper((string)($user?->country ?? '')), ['IN', 'INDIA', 'BHARAT']);
+
+        if (!$isIndia) {
+            $config['currency'] = 'USD';
+            if (isset($config['pro_plan'])) {
+                $config['pro_plan']['currency'] = 'USD';
+                $config['pro_plan']['price'] = (float)($config['pro_plan']['price_usd'] ?? 99);
+            }
+        } else {
+            $config['currency'] = 'INR';
+            if (isset($config['pro_plan'])) {
+                $config['pro_plan']['currency'] = 'INR';
+                $config['pro_plan']['price'] = (float)($config['pro_plan']['price_inr'] ?? ($config['pro_plan']['price'] ?? 6999));
+            }
+        }
 
         return response()->json($config);
     }
