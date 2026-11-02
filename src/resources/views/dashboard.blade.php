@@ -1125,6 +1125,7 @@
 <script>
     window.IS_SIMULATION_MODE = {{ $isSimulationMode ? 'true' : 'false' }};
     window.IS_ONBOARDED = {{ $user->is_onboarded ? 'true' : 'false' }};
+    window.IS_EXPLORING = {{ ($isExploring ?? false) ? 'true' : 'false' }};
     window.INITIAL_TUNNELS = @json($tunnels);
 </script>
 <script src="{{ asset('js/app.js') }}"></script>

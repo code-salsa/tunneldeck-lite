@@ -84,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize onboarding input pre-fills and autosave
     initOnboardingPrefills();
     initOtpInputListeners();
+    syncOnboardingExploreState();
 
     // Check localStorage for sidebar preference
     const savedCollapsed = localStorage.getItem('tunneldeck_sidebar_collapsed') === 'true';
@@ -180,6 +181,9 @@ function toggleSidebar(collapse) {
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
+    if (modalId === 'onboarding-modal') {
+        syncOnboardingExploreState();
+    }
     modal.classList.remove('hidden');
     document.body.classList.add('overflow-hidden');
     if (window.lucide) window.lucide.createIcons();
@@ -2363,7 +2367,73 @@ function syncOtpValue(boxes) {
     return code;
 }
 
+function isUserInExploringMode() {
+    return !!(window.IS_EXPLORING || window.IS_SIMULATION_MODE || (localStorage.getItem('tunneldeck_is_exploring') === 'true'));
+}
+
+function syncOnboardingExploreState(forceExploring = null) {
+    const isExploring = (forceExploring !== null) ? !!forceExploring : isUserInExploringMode();
+    const modal = document.getElementById('onboarding-modal');
+    if (!modal) return;
+
+    // 1. Reset all explore buttons inside onboarding modal
+    const exploreButtons = modal.querySelectorAll('button[onclick*="triggerExplorePlatform"], button[id^="onb-btn-explore"]');
+    exploreButtons.forEach(btn => {
+        btn.disabled = false;
+        // Remove any spinning loader svg
+        const spinSvg = btn.querySelector('svg.animate-spin');
+        if (spinSvg) spinSvg.remove();
+    });
+
+    // 2. Update text on all explore buttons / text spans
+    const textSpans = modal.querySelectorAll('.onb-explore-text');
+    textSpans.forEach(span => {
+        span.textContent = isExploring ? 'Keep Exploring' : (span.getAttribute('data-default-text') || 'Explore');
+    });
+
+    // Clean up any button that had innerHTML overwritten by "Entering exploration..."
+    exploreButtons.forEach(btn => {
+        if (btn.innerHTML.includes('Entering exploration') || btn.innerHTML.includes('animate-spin')) {
+            if (btn.id === 'onb-btn-explore-callout') {
+                btn.innerHTML = `<span class="onb-explore-text" data-default-text="Explore &rarr;">${isExploring ? 'Keep Exploring' : 'Explore &rarr;'}</span>`;
+            } else if (btn.id === 'onb-btn-explore-step1') {
+                btn.innerHTML = `<i data-lucide="compass" class="w-3.5 h-3.5"></i><span class="onb-explore-text" data-default-text="Explore the platform &rarr;">${isExploring ? 'Keep Exploring' : 'Explore the platform &rarr;'}</span>`;
+            } else if (btn.id === 'onb-btn-explore-step2') {
+                btn.innerHTML = `<span class="onb-explore-text" data-default-text="Explore with email">${isExploring ? 'Keep Exploring' : 'Explore with email'}</span>`;
+            } else if (btn.id === 'onb-btn-explore-footer') {
+                btn.innerHTML = `<span class="onb-explore-text" data-default-text="Explore the platform">${isExploring ? 'Keep Exploring' : 'Explore the platform'}</span><i data-lucide="chevron-right" class="w-3 h-3"></i>`;
+            } else {
+                btn.innerHTML = `<span class="onb-explore-text">${isExploring ? 'Keep Exploring' : 'Explore'}</span>`;
+            }
+        }
+    });
+
+    // 3. Update callout headers
+    const calloutTitle = document.getElementById('onb-explore-callout-title');
+    const calloutDesc = document.getElementById('onb-explore-callout-desc');
+    if (calloutTitle && calloutDesc) {
+        if (isExploring) {
+            calloutTitle.textContent = 'Currently Exploring TunnelDeck';
+            calloutDesc.textContent = 'You are exploring the dashboard. You can continue exploring or finish setting up your account.';
+        } else {
+            calloutTitle.textContent = 'Just want to look around?';
+            calloutDesc.textContent = 'Enter your email and explore the platform right away without a password.';
+        }
+    }
+
+    if (window.lucide) window.lucide.createIcons();
+}
+
 async function triggerExplorePlatform(btnElement) {
+    const isAlreadyExploring = isUserInExploringMode();
+
+    // If user is already exploring, clicking "Keep Exploring" simply closes modal to let user continue exploring
+    if (isAlreadyExploring) {
+        closeOnboardingModalToExplore();
+        syncOnboardingExploreState(true);
+        return;
+    }
+
     const emailInput = document.getElementById('onb-email');
     const emailError = document.getElementById('onb-email-error');
     const nameInput = document.getElementById('onb-name');
@@ -2419,6 +2489,10 @@ async function triggerExplorePlatform(btnElement) {
 
         const data = await res.json();
         if (res.ok && data.success) {
+            window.IS_EXPLORING = true;
+            window.IS_SIMULATION_MODE = true;
+            localStorage.setItem('tunneldeck_is_exploring', 'true');
+
             // Cache exploring inputs in localStorage
             if (emailVal) localStorage.setItem('tunneldeck_onboarding_email', emailVal);
             if (nameInput?.value.trim() && !['Platform Explorer', 'TunnelDeck Admin'].includes(nameInput.value.trim())) {
@@ -2426,6 +2500,12 @@ async function triggerExplorePlatform(btnElement) {
             }
             if (cityInput?.value.trim()) localStorage.setItem('tunneldeck_onboarding_city', cityInput.value.trim());
             if (countryInput?.value) localStorage.setItem('tunneldeck_onboarding_country', countryInput.value);
+
+            // Re-enable and reset button to "Keep Exploring" immediately
+            if (btnElement) {
+                btnElement.disabled = false;
+            }
+            syncOnboardingExploreState(true);
 
             // Hide modal smoothly without destroying it
             const modal = document.getElementById('onboarding-modal');
@@ -2467,7 +2547,15 @@ async function triggerExplorePlatform(btnElement) {
             btnElement.innerHTML = originalContent;
         }
         showToast('Network error while connecting to server.', 'error');
+    } finally {
+        if (btnElement) {
+            btnElement.disabled = false;
+            const spinSvg = btnElement.querySelector('svg.animate-spin');
+            if (spinSvg) spinSvg.remove();
+        }
+        syncOnboardingExploreState();
     }
+}
 }
 
 async function handleOnboardingSubmit(event) {
@@ -2619,6 +2707,7 @@ function resumeOnboarding() {
     const modal = document.getElementById('onboarding-modal');
     if (modal) {
         modal.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        syncOnboardingExploreState();
         if (window.lucide) window.lucide.createIcons();
     }
 }
@@ -2630,6 +2719,7 @@ function closeOnboardingModalToExplore() {
         setTimeout(() => {
             modal.classList.add('hidden');
             modal.classList.remove('opacity-0');
+            syncOnboardingExploreState(true);
         }, 200);
     }
     const bar = document.getElementById('continue-onboarding-bar');
@@ -2659,6 +2749,9 @@ function updateSidebarUserData(userData) {
 }
 
 function closeOnboardingModal(userData) {
+    window.IS_EXPLORING = false;
+    window.IS_SIMULATION_MODE = false;
+    localStorage.removeItem('tunneldeck_is_exploring');
     const modal = document.getElementById('onboarding-modal');
     if (modal) {
         modal.classList.add('opacity-0');

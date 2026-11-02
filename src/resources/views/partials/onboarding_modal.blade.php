@@ -113,21 +113,21 @@
                     <div class="flex items-start gap-2.5">
                         <i data-lucide="compass" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5"></i>
                         <div class="space-y-0.5 text-[11px]">
-                            <span class="font-bold text-amber-900">Just want to look around?</span>
-                            <p class="text-amber-700 leading-relaxed">
-                                Enter your email and explore the platform right away without a password.
+                            <span class="font-bold text-amber-900" id="onb-explore-callout-title">{{ ($isExploring ?? false) ? 'Currently Exploring TunnelDeck' : 'Just want to look around?' }}</span>
+                            <p class="text-amber-700 leading-relaxed" id="onb-explore-callout-desc">
+                                {{ ($isExploring ?? false) ? 'You are exploring the dashboard. You can continue exploring or finish setting up your account.' : 'Enter your email and explore the platform right away without a password.' }}
                             </p>
                         </div>
                     </div>
-                    <button type="button" onclick="triggerExplorePlatform(this)" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shrink-0 transition cursor-pointer shadow-xs">
-                        <span>Explore &rarr;</span>
+                    <button type="button" id="onb-btn-explore-callout" onclick="triggerExplorePlatform(this)" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] shrink-0 transition cursor-pointer shadow-xs flex items-center gap-1">
+                        <span class="onb-explore-text" data-default-text="Explore &rarr;">{{ ($isExploring ?? false) ? 'Keep Exploring' : 'Explore &rarr;' }}</span>
                     </button>
                 </div>
 
                 <div class="pt-4 flex items-center justify-between border-t border-slate-100">
-                    <button type="button" onclick="triggerExplorePlatform(this)" class="text-xs font-semibold text-slate-500 hover:text-[#100091] transition cursor-pointer flex items-center gap-1">
+                    <button type="button" id="onb-btn-explore-step1" onclick="triggerExplorePlatform(this)" class="text-xs font-semibold text-slate-500 hover:text-[#100091] transition cursor-pointer flex items-center gap-1">
                         <i data-lucide="compass" class="w-3.5 h-3.5"></i>
-                        <span>Explore the platform &rarr;</span>
+                        <span class="onb-explore-text" data-default-text="Explore the platform &rarr;">{{ ($isExploring ?? false) ? 'Keep Exploring' : 'Explore the platform &rarr;' }}</span>
                     </button>
 
                     <button type="button" onclick="goToOnboardingStep(2)" class="px-5 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-[#100091]/25">
@@ -176,8 +176,8 @@
                     </button>
 
                     <div class="flex items-center gap-3">
-                        <button type="button" onclick="triggerExplorePlatform(this)" class="text-xs font-semibold text-slate-500 hover:text-[#100091] transition cursor-pointer">
-                            Explore with email
+                        <button type="button" id="onb-btn-explore-step2" onclick="triggerExplorePlatform(this)" class="text-xs font-semibold text-slate-500 hover:text-[#100091] transition cursor-pointer">
+                            <span class="onb-explore-text" data-default-text="Explore with email">{{ ($isExploring ?? false) ? 'Keep Exploring' : 'Explore with email' }}</span>
                         </button>
                         <button type="button" onclick="goToOnboardingStep(3)" class="px-5 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-[#100091]/25">
                             <span>Next: Security</span>
@@ -312,8 +312,8 @@
         <!-- Bottom Explore Platform Footer Bar -->
         <div class="px-8 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
             <span>TunnelDeck <span class="app-edition-label" data-app-edition>{{ (auth()->user() && auth()->user()->isPro()) ? 'Pro' : 'Lite' }}</span> Licensing Engine</span>
-            <button type="button" onclick="triggerExplorePlatform(this)" class="font-bold text-[#100091] hover:underline cursor-pointer flex items-center gap-1">
-                <span>Explore the platform</span>
+            <button type="button" id="onb-btn-explore-footer" onclick="triggerExplorePlatform(this)" class="font-bold text-[#100091] hover:underline cursor-pointer flex items-center gap-1">
+                <span class="onb-explore-text" data-default-text="Explore the platform">{{ ($isExploring ?? false) ? 'Keep Exploring' : 'Explore the platform' }}</span>
                 <i data-lucide="chevron-right" class="w-3 h-3"></i>
             </button>
         </div>
