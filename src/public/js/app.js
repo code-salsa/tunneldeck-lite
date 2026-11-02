@@ -192,6 +192,13 @@ function openModal(modalId) {
 function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (!modal) return;
+    if (modalId === 'modal-pro-welcome') {
+        const successView = document.getElementById('pro-upgrade-success-view');
+        if (successView && !successView.classList.contains('hidden')) {
+            exploreProExperience();
+            return;
+        }
+    }
     modal.classList.add('hidden');
     document.body.classList.remove('overflow-hidden');
 }
@@ -3482,6 +3489,31 @@ async function runProUpgradeProgressFlow(paymentId, amount, currency) {
             if (window.lucide) window.lucide.createIcons();
         }
     }
+}
+
+function exploreProExperience(btn) {
+    const targetBtn = btn || document.getElementById('btn-explore-pro-experience');
+    if (targetBtn) {
+        targetBtn.disabled = true;
+        targetBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline-block text-white align-middle" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>Launching Pro Workspace...</span>';
+    }
+
+    const modal = document.getElementById('modal-pro-welcome');
+    if (modal) modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+
+    showToast('Refreshing TunnelDeck with Pro privileges...', 'success');
+
+    // Force hard platform navigation and cache-busting refresh
+    const targetUrl = window.location.origin + window.location.pathname + '?upgraded=' + Date.now();
+    try {
+        window.location.assign(targetUrl);
+    } catch (e) {
+        window.location.href = targetUrl;
+    }
+    setTimeout(() => {
+        window.location.replace(targetUrl);
+    }, 150);
 }
 
 async function openCoffeePaymentCheckout(btn) {

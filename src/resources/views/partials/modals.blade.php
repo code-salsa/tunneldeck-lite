@@ -617,8 +617,9 @@
                 </div>
             </div>
 
-            <button type="button" onclick="closeModal('modal-pro-welcome'); window.location.reload();" class="w-full py-2.5 px-4 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-bold transition shadow-md shadow-[#100091]/25 cursor-pointer">
-                Launch Pro Experience &rarr;
+            <button type="button" id="btn-explore-pro-experience" onclick="exploreProExperience(this)" class="w-full py-2.5 px-4 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white text-xs font-bold transition shadow-md shadow-[#100091]/25 cursor-pointer flex items-center justify-center gap-2">
+                <span>Explore Pro Experience</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
             </button>
         </div>
 

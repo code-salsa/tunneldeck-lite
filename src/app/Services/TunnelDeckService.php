@@ -840,6 +840,17 @@ class TunnelDeckService
             Log::warning('Artisan migrate post-pro-upgrade: ' . $e->getMessage());
         }
 
+        // Ensure custom domains list is clean and blank (remove any legacy test/dummy domains)
+        try {
+            if (\Illuminate\Support\Facades\Schema::hasTable('custom_domains')) {
+                \Illuminate\Support\Facades\DB::table('custom_domains')
+                    ->whereIn('domain', ['altrisense.online', 'altricampus.online', 'altrisign.online', 'tunneldeck.online'])
+                    ->delete();
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Cleaning dummy domains post-pro-upgrade: ' . $e->getMessage());
+        }
+
         return [
             'success' => true,
             'files_count' => count($extractedFiles),
