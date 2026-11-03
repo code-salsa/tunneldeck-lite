@@ -71,11 +71,11 @@ if not defined PHP_CMD (
     )
 )
 
-:: 3rd Priority: System PATH PHP >= 8.2 with pdo_sqlite
+:: 3rd Priority: System PATH PHP >= 8.2
 if not defined PHP_CMD (
     where php >nul 2>&1
     if !ERRORLEVEL! equ 0 (
-        php -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+        php -r "exit((PHP_VERSION_ID >= 80200) ? 0 : 1);" >nul 2>&1
         if !ERRORLEVEL! equ 0 set "PHP_CMD=php"
     )
 )
@@ -92,7 +92,7 @@ if not defined PHP_CMD (
     ) do (
         if not defined PHP_CMD (
             if exist %%P (
-                %%P -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+                %%P -r "exit((PHP_VERSION_ID >= 80200) ? 0 : 1);" >nul 2>&1
                 if !ERRORLEVEL! equ 0 set "PHP_CMD=%%~P"
             )
         )
@@ -103,7 +103,7 @@ if not defined PHP_CMD (
     for /d %%D in ("C:\laragon\bin\php\*") do (
         if not defined PHP_CMD (
             if exist "%%D\php.exe" (
-                "%%D\php.exe" -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+                "%%D\php.exe" -r "exit((PHP_VERSION_ID >= 80200) ? 0 : 1);" >nul 2>&1
                 if !ERRORLEVEL! equ 0 set "PHP_CMD=%%D\php.exe"
             )
         )
@@ -114,7 +114,7 @@ if not defined PHP_CMD (
     for /d %%D in ("C:\Program Files\PHP\*") do (
         if not defined PHP_CMD (
             if exist "%%D\php.exe" (
-                "%%D\php.exe" -r "exit((PHP_VERSION_ID >= 80200 && extension_loaded('pdo_sqlite')) ? 0 : 1);" >nul 2>&1
+                "%%D\php.exe" -r "exit((PHP_VERSION_ID >= 80200) ? 0 : 1);" >nul 2>&1
                 if !ERRORLEVEL! equ 0 set "PHP_CMD=%%D\php.exe"
             )
         )
@@ -127,19 +127,75 @@ if not defined PHP_CMD (
     exit /b 1
 )
 
-:: Prepend PHP directory to session PATH so extensions and sub-processes can resolve DLLs
+:: Prepend PHP directory to session PATH and isolate PHPRC
 for %%F in ("!PHP_CMD!") do set "PHP_DIR=%%~dpF"
 if defined PHP_DIR (
-    set "PATH=!PHP_DIR!;!PHP_DIR!ext;!PATH!"
+    if "!PHP_DIR:~-1!"=="\" set "PHP_DIR=!PHP_DIR:~0,-1!"
+    set "PHPRC=!PHP_DIR!"
+    set "PATH=!PHP_DIR!;!PHP_DIR!\ext;!PATH!"
+)
+
+:: Locate php.ini and ext directory
+set "PHP_INI="
+if exist "!PHP_DIR!\php.ini" (
+    set "PHP_INI=!PHP_DIR!\php.ini"
+) else if exist "%~dp0bin\php\php.ini" (
+    set "PHP_INI=%~dp0bin\php\php.ini"
+)
+
+set "PHP_EXT_DIR="
+if exist "!PHP_DIR!\ext" (
+    set "PHP_EXT_DIR=!PHP_DIR!\ext"
+) else if exist "%~dp0bin\php\ext" (
+    set "PHP_EXT_DIR=%~dp0bin\php\ext"
+)
+
+:: Build unified PHP execution command
+set "PHP_EXEC="!PHP_CMD!""
+if defined PHP_INI (
+    set "PHP_EXEC=!PHP_EXEC! -c "!PHP_INI!""
+)
+if defined PHP_EXT_DIR (
+    set "PHP_EXEC=!PHP_EXEC! -d extension_dir="!PHP_EXT_DIR!""
 )
 
 echo {"step":"php","status":"done","message":"PHP runtime verified"} > "%~dp0status.json"
 
-:: 7. Verify required PHP SQLite extension
+:: 7. Verify and auto-configure required PHP SQLite & core extensions
 echo {"step":"database","status":"running","message":"Verifying SQLite database and extensions..."} > "%~dp0status.json"
-"!PHP_CMD!" -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+
+:: Check if pdo_sqlite is already active
+!PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
 if !ERRORLEVEL! neq 0 (
-    echo {"step":"database","status":"error","message":"The pdo_sqlite extension is disabled in php.ini. Please open php.ini and uncomment: extension=pdo_sqlite"} > "%~dp0status.json"
+    :: Attempt A: Auto-uncomment required extensions in php.ini if present and commented out
+    if defined PHP_INI (
+        if exist "!PHP_INI!" (
+            powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = '!PHP_INI!'; if (Test-Path $p) { (Get-Content $p) | ForEach-Object { $_ -replace '^[;\s]*extension\s*=\s*(pdo_sqlite|sqlite3|curl|openssl|mbstring|fileinfo)\b', 'extension=$1' } | Set-Content $p }" >nul 2>&1
+        )
+    )
+    !PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+)
+
+:: Attempt B: If still not loaded, dynamically enable extensions via -d flags
+if !ERRORLEVEL! neq 0 (
+    !PHP_EXEC! -d extension=pdo_sqlite -d extension=sqlite3 -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        set "PHP_EXEC=!PHP_EXEC! -d extension=pdo_sqlite -d extension=sqlite3"
+    )
+)
+
+:: Attempt C: Explicit .dll suffix for Windows PHP
+if !ERRORLEVEL! neq 0 (
+    !PHP_EXEC! -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+    if !ERRORLEVEL! equ 0 (
+        set "PHP_EXEC=!PHP_EXEC! -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll"
+    )
+)
+
+:: Final verification: check if pdo_sqlite extension is operational
+!PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+if !ERRORLEVEL! neq 0 (
+    echo {"step":"database","status":"error","message":"The pdo_sqlite extension could not be loaded. Please ensure bin/php/ext/php_pdo_sqlite.dll is present or enable extension=pdo_sqlite in php.ini."} > "%~dp0status.json"
     exit /b 1
 )
 
@@ -160,8 +216,8 @@ if not exist "%~dp0src\.env" (
 if not exist "%~dp0src\database\database.sqlite" (
     type nul > "%~dp0src\database\database.sqlite"
     if exist "%~dp0src\database\schema\sqlite-schema.sql" (
-        "!PHP_CMD!" -r "$db = new PDO('sqlite:%~dp0src/database/database.sqlite'); $sql = file_get_contents('%~dp0src/database/schema/sqlite-schema.sql'); $db->exec($sql);" >nul 2>&1
-        "!PHP_CMD!" "%~dp0src\artisan" db:seed --force >nul 2>&1
+        !PHP_EXEC! -r "$db = new PDO('sqlite:%~dp0src/database/database.sqlite'); $sql = file_get_contents('%~dp0src/database/schema/sqlite-schema.sql'); $db->exec($sql);" >nul 2>&1
+        !PHP_EXEC! "%~dp0src\artisan" db:seed --force >nul 2>&1
     )
 )
 
@@ -170,7 +226,7 @@ echo {"step":"database","status":"done","message":"SQLite database and environme
 :: 11. Run server directly with built-in router and bundled SSL CA bundle
 echo {"step":"server","status":"running","message":"Starting local server on port !PORT!..."} > "%~dp0status.json"
 cd /d "%~dp0src"
-"!PHP_CMD!" -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" > "%~dp0src\storage\logs\startup.log" 2>&1
+!PHP_EXEC! -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" > "%~dp0src\storage\logs\startup.log" 2>&1
 
 :: If server stops unexpectedly
 echo {"step":"server","status":"error","message":"Local server stopped unexpectedly. Check src/storage/logs/startup.log for error details."} > "%~dp0status.json"
