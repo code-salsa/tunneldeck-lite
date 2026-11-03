@@ -80,10 +80,11 @@ if not defined PHP_CMD (
 
 :: 3rd Priority: System PATH PHP >= 8.2
 if not defined PHP_CMD (
-    where php >nul 2>&1
-    if !ERRORLEVEL! equ 0 (
-        php -r "exit((PHP_VERSION_ID >= 80200) ? 0 : 1);" >nul 2>&1
-        if !ERRORLEVEL! equ 0 set "PHP_CMD=php"
+    for /f "delims=" %%I in ('where php 2^>nul') do (
+        if not defined PHP_CMD (
+            "%%I" -r "exit((PHP_VERSION_ID >= 80200) ? 0 : 1);" >nul 2>&1
+            if !ERRORLEVEL! equ 0 set "PHP_CMD=%%I"
+        )
     )
 )
 
@@ -157,6 +158,15 @@ if exist "!PHP_DIR!\ext" (
     set "PHP_EXT_DIR=%~dp0bin\php\ext"
 )
 
+:: Ensure required runtime DLLs are mirrored in ext directory for LoadLibrary resolution
+if defined PHP_EXT_DIR (
+    if not exist "!PHP_EXT_DIR!" mkdir "!PHP_EXT_DIR!" >nul 2>&1
+    if exist "!PHP_DIR!\libsqlite3.dll" if not exist "!PHP_EXT_DIR!\libsqlite3.dll" copy /y "!PHP_DIR!\libsqlite3.dll" "!PHP_EXT_DIR!\libsqlite3.dll" >nul 2>&1
+    if exist "!PHP_DIR!\vcruntime140.dll" if not exist "!PHP_EXT_DIR!\vcruntime140.dll" copy /y "!PHP_DIR!\vcruntime140.dll" "!PHP_EXT_DIR!\vcruntime140.dll" >nul 2>&1
+    if exist "!PHP_DIR!\libcrypto-3-x64.dll" if not exist "!PHP_EXT_DIR!\libcrypto-3-x64.dll" copy /y "!PHP_DIR!\libcrypto-3-x64.dll" "!PHP_EXT_DIR!\libcrypto-3-x64.dll" >nul 2>&1
+    if exist "!PHP_DIR!\libssl-3-x64.dll" if not exist "!PHP_EXT_DIR!\libssl-3-x64.dll" copy /y "!PHP_DIR!\libssl-3-x64.dll" "!PHP_EXT_DIR!\libssl-3-x64.dll" >nul 2>&1
+)
+
 :: Build unified PHP execution command
 set "PHP_EXEC="!PHP_CMD!""
 if defined PHP_INI (
@@ -202,7 +212,14 @@ if !ERRORLEVEL! neq 0 (
 :: Final verification: check if pdo_sqlite extension is operational
 !PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
 if !ERRORLEVEL! neq 0 (
-    echo {"step":"database","status":"error","message":"The pdo_sqlite extension could not be loaded. Please ensure bin/php/ext/php_pdo_sqlite.dll is present or enable extension=pdo_sqlite in php.ini."} > "%~dp0status.json"
+    set "ERR_DETAIL="
+    for /f "delims=" %%E in ('!PHP_EXEC! -d display_startup_errors=On -d display_errors=On -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" 2^>^&1') do (
+        if not defined ERR_DETAIL set "ERR_DETAIL=%%E"
+    )
+    if not defined ERR_DETAIL (
+        set "ERR_DETAIL=The pdo_sqlite extension could not be loaded. Please ensure bin/php/ext/php_pdo_sqlite.dll is present or enable extension=pdo_sqlite in php.ini."
+    )
+    echo {"step":"database","status":"error","message":"!ERR_DETAIL!"} > "%~dp0status.json"
     exit /b 1
 )
 
