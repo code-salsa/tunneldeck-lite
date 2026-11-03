@@ -98,7 +98,7 @@ class TunnelManagerService
         }
 
         $logPath = $logsDir . '/' . $tunnel->process_uuid . '.log';
-        $binary = config('tunneldeck.cloudflared_binary_path', 'cloudflared');
+        $binary = static::ensureBinary();
 
         $defaultTunnelDomain = \App\Models\Setting::get('default_tunnel_domain');
         $isNamedTunnel = !empty($tunnel->custom_domain_id) || !empty($defaultTunnelDomain);
@@ -630,7 +630,7 @@ class TunnelManagerService
         }
 
         try {
-            $binary = config('tunneldeck.cloudflared_binary_path', 'cloudflared');
+            $binary = static::ensureBinary();
             $tunnelName = 'tunneldeck-' . $tunnel->id;
 
             Log::channel('tunnels')->info("TunnelManagerService: Deleting named tunnel '{$tunnelName}' from Cloudflare...");
@@ -642,6 +642,65 @@ class TunnelManagerService
         } catch (\Exception $e) {
             Log::channel('tunnels')->error("TunnelManagerService: Error deleting named tunnel from Cloudflare: " . $e->getMessage());
         }
+    }
+
+    /**
+     * Ensure the cloudflared binary is available and executable.
+     * Returns the verified absolute path or global binary name.
+     */
+    public static function ensureBinary(): string
+    {
+        $binary = config('tunneldeck.cloudflared_binary_path');
+        if (!empty($binary) && file_exists($binary)) {
+            return $binary;
+        }
+
+        // Check if global cloudflared exists in system PATH
+        if (PHP_OS_FAMILY === 'Windows') {
+            @exec('where cloudflared 2>nul', $whereOut, $whereCode);
+            if ($whereCode === 0 && !empty($whereOut[0]) && file_exists(trim($whereOut[0]))) {
+                return trim($whereOut[0]);
+            }
+        } else {
+            @exec('which cloudflared 2>/dev/null', $whichOut, $whichCode);
+            if ($whichCode === 0 && !empty($whichOut[0]) && file_exists(trim($whichOut[0]))) {
+                return trim($whichOut[0]);
+            }
+        }
+
+        $targetDir = base_path('bin/windows/x64');
+        $targetFile = $targetDir . '/cloudflared.exe';
+        $tmpFile = $targetDir . '/cloudflared.exe.tmp';
+
+        if (file_exists($targetFile) && filesize($targetFile) > 10000000) {
+            return $targetFile;
+        }
+
+        // If background download is currently underway, wait up to 8 seconds
+        if (file_exists($tmpFile)) {
+            $start = time();
+            while (time() - $start < 8) {
+                clearstatcache(true, $targetFile);
+                if (file_exists($targetFile) && filesize($targetFile) > 10000000) {
+                    return $targetFile;
+                }
+                usleep(500000);
+            }
+
+            throw new \Exception("Cloudflare tunnel core is downloading in the background. Please wait a few moments and click Start again.");
+        }
+
+        // Trigger background download
+        if (!file_exists($targetDir)) {
+            @mkdir($targetDir, 0755, true);
+        }
+
+        if (PHP_OS_FAMILY === 'Windows') {
+            $psCmd = "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \$tmp = '{$tmpFile}'; \$dst = '{$targetFile}'; try { (New-Object System.Net.WebClient).DownloadFile('https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe', \$tmp); if ((Get-Item \$tmp).Length -gt 10000000) { Move-Item -Force \$tmp \$dst } else { Remove-Item -Force \$tmp } } catch {}";
+            @pclose(@popen("start /b powershell -NoProfile -ExecutionPolicy Bypass -Command \"{$psCmd}\"", 'r'));
+        }
+
+        throw new \Exception("Downloading Cloudflare tunnel core for first-time use. Please wait a few moments and click Start again.");
     }
 
     /**

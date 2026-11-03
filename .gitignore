@@ -48,6 +48,12 @@ src/.phpunit.cache/
 # System and OS files
 .DS_Store
 Thumbs.db
+
+# Binary executables downloaded dynamically on first boot
+src/bin/**/*.exe
+src/bin/**/*.tmp
+!src/bin/**/.gitkeep
+
 *.log
 *.sqlite-journal
 status.json

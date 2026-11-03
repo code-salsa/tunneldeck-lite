@@ -55,6 +55,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "$procs = Get-CimInstance
 
 echo {"step":"env","status":"done","message":"Desktop environment and workspace ready"} > "%~dp0status.json"
 
+:: 5b. Initiate non-blocking background download of cloudflared binary if not present
+set "CF_EXE=%~dp0src\bin\windows\x64\cloudflared.exe"
+if not exist "!CF_EXE!" (
+    start /b "" powershell -NoProfile -ExecutionPolicy Bypass -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; $dir = '%~dp0src\bin\windows\x64'; if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Force -Path $dir | Out-Null }; $tmp = \"$dir\cloudflared.exe.tmp\"; $dst = \"$dir\cloudflared.exe\"; if (-not (Test-Path $tmp)) { try { (New-Object System.Net.WebClient).DownloadFile('https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe', $tmp); if ((Get-Item $tmp).Length -gt 10000000) { Move-Item -Force $tmp $dst } else { Remove-Item -Force $tmp } } catch {} }" >nul 2>&1
+)
+
+
 :: 6. Locate PHP runtime engine
 echo {"step":"php","status":"running","message":"Loading PHP 8.4 runtime engine..."} > "%~dp0status.json"
 set "PHP_CMD="
