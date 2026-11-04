@@ -27,3 +27,8 @@ CREATE UNIQUE INDEX "tunnels_name_unique" on "tunnels" ("name");
 CREATE UNIQUE INDEX "tunnels_port_unique" on "tunnels" ("port");
 CREATE INDEX "tunnels_status_index" on "tunnels" ("status");
 CREATE UNIQUE INDEX "users_email_unique" on "users" ("email");
+INSERT OR IGNORE INTO "users" ("id", "name", "email", "email_verified_at", "password", "package", "is_onboarded", "status", "created_at", "updated_at") VALUES (1, 'TunnelDeck Admin', 'admin@tunneldeck.online', CURRENT_TIMESTAMP, '$2y$12$dDgqAPrNGCFxigoBA.z0rOtl8G6WD7DsNQSuPjNw/PBBz1B29cjL.', 'lite', 0, 'active', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT OR IGNORE INTO "tunnels" ("id", "user_id", "name", "port", "status", "public_url", "custom_subdomain", "is_dummy", "created_at", "updated_at") VALUES (1, 1, 'Demo Next.js Frontend', 3000, 'stopped', 'https://demo-nextjs-app.trycloudflare.com', 'demo-nextjs', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT OR IGNORE INTO "tunnels" ("id", "user_id", "name", "port", "status", "public_url", "custom_subdomain", "is_dummy", "created_at", "updated_at") VALUES (2, 1, 'Sample REST API Backend', 8000, 'stopped', 'https://sample-rest-api.trycloudflare.com', 'sample-api', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT OR IGNORE INTO "tunnels" ("id", "user_id", "name", "port", "status", "public_url", "custom_subdomain", "is_dummy", "created_at", "updated_at") VALUES (3, 1, 'Mock Payment Webhook', 4242, 'stopped', 'https://mock-payment-hook.trycloudflare.com', 'mock-hook', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT OR IGNORE INTO "activities" ("id", "user_id", "description", "type", "created_at", "updated_at") VALUES (1, 1, 'TunnelDeck Lite Initialized with Cloudflare Tunneling Engine', 'info', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

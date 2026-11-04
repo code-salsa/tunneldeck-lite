@@ -158,13 +158,14 @@ if exist "!PHP_DIR!\ext" (
     set "PHP_EXT_DIR=%~dp0bin\php\ext"
 )
 
-:: Ensure required runtime DLLs are mirrored in ext directory for LoadLibrary resolution
+:: Ensure required runtime DLLs are mirrored in ext directory for Win32 LoadLibrary resolution
 if defined PHP_EXT_DIR (
     if not exist "!PHP_EXT_DIR!" mkdir "!PHP_EXT_DIR!" >nul 2>&1
-    if exist "!PHP_DIR!\libsqlite3.dll" if not exist "!PHP_EXT_DIR!\libsqlite3.dll" copy /y "!PHP_DIR!\libsqlite3.dll" "!PHP_EXT_DIR!\libsqlite3.dll" >nul 2>&1
-    if exist "!PHP_DIR!\vcruntime140.dll" if not exist "!PHP_EXT_DIR!\vcruntime140.dll" copy /y "!PHP_DIR!\vcruntime140.dll" "!PHP_EXT_DIR!\vcruntime140.dll" >nul 2>&1
-    if exist "!PHP_DIR!\libcrypto-3-x64.dll" if not exist "!PHP_EXT_DIR!\libcrypto-3-x64.dll" copy /y "!PHP_DIR!\libcrypto-3-x64.dll" "!PHP_EXT_DIR!\libcrypto-3-x64.dll" >nul 2>&1
-    if exist "!PHP_DIR!\libssl-3-x64.dll" if not exist "!PHP_EXT_DIR!\libssl-3-x64.dll" copy /y "!PHP_DIR!\libssl-3-x64.dll" "!PHP_EXT_DIR!\libssl-3-x64.dll" >nul 2>&1
+    for %%D in ("!PHP_DIR!\*.dll") do (
+        if not exist "!PHP_EXT_DIR!\%%~nxD" (
+            copy /y "%%D" "!PHP_EXT_DIR!\%%~nxD" >nul 2>&1
+        )
+    )
 )
 
 :: Build unified PHP execution command
@@ -184,37 +185,35 @@ echo {"step":"database","status":"running","message":"Verifying SQLite database 
 :: Check if pdo_sqlite is already active
 !PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
 if !ERRORLEVEL! neq 0 (
-    :: Attempt A: Auto-uncomment required extensions in php.ini if present and commented out
-    if defined PHP_INI (
-        if exist "!PHP_INI!" (
-            powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = '!PHP_INI!'; if (Test-Path $p) { (Get-Content $p) | ForEach-Object { $_ -replace '^[;\s]*extension\s*=\s*(pdo_sqlite|sqlite3|curl|openssl|mbstring|fileinfo)\b', 'extension=$1' } | Set-Content $p }" >nul 2>&1
-        )
-    )
-    !PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
-)
-
-:: Attempt B: If still not loaded, dynamically enable extensions via -d flags
-if !ERRORLEVEL! neq 0 (
+    :: Attempt A: Dynamically enable extensions via -d flags
     !PHP_EXEC! -d extension=pdo_sqlite -d extension=sqlite3 -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
     if !ERRORLEVEL! equ 0 (
         set "PHP_EXEC=!PHP_EXEC! -d extension=pdo_sqlite -d extension=sqlite3"
-    )
-)
-
-:: Attempt C: Explicit .dll suffix for Windows PHP
-if !ERRORLEVEL! neq 0 (
-    !PHP_EXEC! -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
-    if !ERRORLEVEL! equ 0 (
-        set "PHP_EXEC=!PHP_EXEC! -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll"
+    ) else (
+        :: Attempt B: Explicit .dll suffix for Windows PHP
+        !PHP_EXEC! -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
+        if !ERRORLEVEL! equ 0 (
+            set "PHP_EXEC=!PHP_EXEC! -d extension=php_pdo_sqlite.dll -d extension=php_sqlite3.dll"
+        ) else (
+            :: Attempt C: Auto-uncomment required extensions in php.ini if present and commented out
+            if defined PHP_INI if exist "!PHP_INI!" (
+                powershell -NoProfile -ExecutionPolicy Bypass -Command "$p = '!PHP_INI!'; if (Test-Path $p) { (Get-Content $p) | ForEach-Object { $_ -replace '^[;\s]*extension\s*=\s*(pdo_sqlite|sqlite3|curl|openssl|mbstring|fileinfo)\b', 'extension=$1' } | Set-Content $p }" >nul 2>&1
+            )
+        )
     )
 )
 
 :: Final verification: check if pdo_sqlite extension is operational
 !PHP_EXEC! -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" >nul 2>&1
 if !ERRORLEVEL! neq 0 (
+    set "ERR_TMP=%TEMP%\td_db_err_%RANDOM%.log"
+    !PHP_EXEC! -d display_startup_errors=On -d display_errors=On -r "new PDO('sqlite::memory:');" > "!ERR_TMP!" 2>&1
     set "ERR_DETAIL="
-    for /f "delims=" %%E in ('!PHP_EXEC! -d display_startup_errors=On -d display_errors=On -r "exit(extension_loaded('pdo_sqlite') ? 0 : 1);" 2^>^&1') do (
-        if not defined ERR_DETAIL set "ERR_DETAIL=%%E"
+    if exist "!ERR_TMP!" (
+        for /f "usebackq delims=" %%E in ("!ERR_TMP!") do (
+            if not defined ERR_DETAIL set "ERR_DETAIL=%%E"
+        )
+        del "!ERR_TMP!" >nul 2>&1
     )
     if not defined ERR_DETAIL (
         set "ERR_DETAIL=The pdo_sqlite extension could not be loaded. Please ensure bin/php/ext/php_pdo_sqlite.dll is present or enable extension=pdo_sqlite in php.ini."
@@ -237,11 +236,17 @@ if not exist "%~dp0src\.env" (
 )
 
 :: 10. Ensure database.sqlite exists and has tables
-if not exist "%~dp0src\database\database.sqlite" (
-    type nul > "%~dp0src\database\database.sqlite"
+set "DB_FILE=%~dp0src\database\database.sqlite"
+set "NEED_INIT=0"
+if not exist "!DB_FILE!" (
+    set "NEED_INIT=1"
+) else (
+    for %%A in ("!DB_FILE!") do if %%~zA equ 0 set "NEED_INIT=1"
+)
+if "!NEED_INIT!"=="1" (
+    type nul > "!DB_FILE!"
     if exist "%~dp0src\database\schema\sqlite-schema.sql" (
         !PHP_EXEC! -r "$db = new PDO('sqlite:%~dp0src/database/database.sqlite'); $sql = file_get_contents('%~dp0src/database/schema/sqlite-schema.sql'); $db->exec($sql);" >nul 2>&1
-        !PHP_EXEC! "%~dp0src\artisan" db:seed --force >nul 2>&1
     )
 )
 
@@ -249,8 +254,9 @@ echo {"step":"database","status":"done","message":"SQLite database and environme
 
 :: 11. Run server directly with built-in router and bundled SSL CA bundle
 echo {"step":"server","status":"running","message":"Starting local server on port !PORT!..."} > "%~dp0status.json"
+echo [TunnelDeck Server Starting on 127.0.0.1:!PORT!] > "%~dp0src\storage\logs\startup.log"
 cd /d "%~dp0src"
-!PHP_EXEC! -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" > "%~dp0src\storage\logs\startup.log" 2>&1
+!PHP_EXEC! -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" >> "%~dp0src\storage\logs\startup.log" 2>&1
 
 :: If server stops unexpectedly
 echo {"step":"server","status":"error","message":"Local server stopped unexpectedly. Check src/storage/logs/startup.log for error details."} > "%~dp0status.json"
