@@ -1128,8 +1128,8 @@
     window.IS_EXPLORING = {{ ($isExploring ?? false) ? 'true' : 'false' }};
     window.INITIAL_TUNNELS = @json($tunnels);
 </script>
-<script src="{{ asset('js/app.js') }}"></script>
+<script src="{{ asset('js/app.js') }}?v={{ @filemtime(public_path('js/app.js')) ?: time() }}"></script>
 @if(file_exists(public_path('js/domains.js')))
-<script src="{{ asset('js/domains.js') }}"></script>
+<script src="{{ asset('js/domains.js') }}?v={{ @filemtime(public_path('js/domains.js')) ?: time() }}"></script>
 @endif
 @endpush

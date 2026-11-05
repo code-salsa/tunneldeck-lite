@@ -2563,7 +2563,6 @@ async function triggerExplorePlatform(btnElement) {
         syncOnboardingExploreState();
     }
 }
-}
 
 async function handleOnboardingSubmit(event) {
     event.preventDefault();
