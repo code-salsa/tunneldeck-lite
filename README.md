@@ -2,6 +2,10 @@
 
 <div align="center">
 
+<img src="docs/images/banner.png" alt="TunnelDeck Lite vs Pro Edition Comparison Banner" width="100%" />
+
+<br><br>
+
 [![Release](https://img.shields.io/github/v/release/code-salsa/tunneldeck-lite?color=blue&label=version)](https://github.com/code-salsa/tunneldeck-lite/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-informational)](#-downloads--official-releases)
 [![PHP](https://img.shields.io/badge/runtime-PHP%208.2%2B-777bb4)](#requirements)
