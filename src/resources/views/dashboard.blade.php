@@ -108,14 +108,9 @@
                             <span>Unlimited custom domains</span>
                         </li>
                     </ul>
-                    <button type="button" id="btn-sidebar-upgrade-pro" onclick="{{ !$user->is_onboarded ? "openModal('onboarding-modal')" : "openProPaymentCheckout(this)" }}" class="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="{{ !$user->is_onboarded ? 'Complete onboarding first to upgrade' : 'Upgrade to Pro' }}">
-                        @if(!$user->is_onboarded)
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-900"></i>
-                            <span id="sidebar-pro-btn-text">Complete Onboarding</span>
-                        @else
-                            <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
-                            <span id="sidebar-pro-btn-text">Upgrade to Pro Now</span>
-                        @endif
+                    <button type="button" id="btn-sidebar-upgrade-pro" onclick="{{ !$user->is_onboarded ? "openModal('onboarding-modal')" : "openProPaymentCheckout(this)" }}" class="w-full py-2 px-3 rounded-xl bg-amber-400 hover:bg-amber-300 text-amber-950 text-xs font-black transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="{{ !$user->is_onboarded ? 'Complete onboarding first to upgrade' : 'Upgrade' }}">
+                        <i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i>
+                        <span id="sidebar-pro-btn-text">Upgrade</span>
                     </button>
                 </div>
 
@@ -147,14 +142,9 @@
                         <input type="number" id="sidebar-coffee-amount" value="250" min="10" step="10" {{ !$user->is_onboarded ? 'disabled' : '' }} class="w-full pl-6 pr-2.5 py-1.5 bg-white border border-amber-200 rounded-lg text-xs font-bold text-slate-900 focus:outline-none focus:ring-1 focus:ring-amber-400 {{ !$user->is_onboarded ? 'cursor-not-allowed opacity-50' : '' }}">
                     </div>
                     <input type="text" id="sidebar-coffee-message" placeholder="Leave a friendly note (optional)" {{ !$user->is_onboarded ? 'disabled' : '' }} class="w-full px-2.5 py-1 bg-white border border-amber-200 rounded-lg text-[11px] text-slate-800 placeholder-slate-400 focus:outline-none {{ !$user->is_onboarded ? 'cursor-not-allowed opacity-50' : '' }}">
-                    <button type="button" id="btn-sidebar-donate-coffee" onclick="{{ !$user->is_onboarded ? "openModal('onboarding-modal')" : "openCoffeePaymentCheckout(this)" }}" class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="{{ !$user->is_onboarded ? 'Complete onboarding first to donate' : 'Donate Coffee' }}">
-                        @if(!$user->is_onboarded)
-                            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                            <span id="sidebar-coffee-btn-text">Complete Onboarding</span>
-                        @else
-                            <i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i>
-                            <span id="sidebar-coffee-btn-text">Donate Coffee</span>
-                        @endif
+                    <button type="button" id="btn-sidebar-donate-coffee" onclick="{{ !$user->is_onboarded ? "openModal('onboarding-modal')" : "openCoffeePaymentCheckout(this)" }}" class="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-700 hover:to-amber-600 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm cursor-pointer" title="{{ !$user->is_onboarded ? 'Complete onboarding first to donate' : 'Buy me a coffee' }}">
+                        <i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i>
+                        <span id="sidebar-coffee-btn-text">Buy me a coffee</span>
                     </button>
                 </div>
             </div>

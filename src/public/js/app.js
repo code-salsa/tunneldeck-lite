@@ -1465,12 +1465,12 @@ function updateSidebarCardsOnboardingState(isOnboarded) {
         if (proBtn) {
             proBtn.onclick = function() { openProPaymentCheckout(this); };
             proBtn.title = 'Upgrade to Pro';
-            proBtn.innerHTML = '<i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i><span id="sidebar-pro-btn-text">Upgrade to Pro Now</span>';
+            proBtn.innerHTML = '<i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i><span id="sidebar-pro-btn-text">Upgrade</span>';
         }
         if (coffeeBtn) {
             coffeeBtn.onclick = function() { openCoffeePaymentCheckout(this); };
-            coffeeBtn.title = 'Donate Coffee';
-            coffeeBtn.innerHTML = '<i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i><span id="sidebar-coffee-btn-text">Donate Coffee</span>';
+            coffeeBtn.title = 'Buy me a coffee';
+            coffeeBtn.innerHTML = '<i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i><span id="sidebar-coffee-btn-text">Buy me a coffee</span>';
         }
     } else {
         if (proCard) proCard.classList.add('opacity-60');
@@ -1485,12 +1485,12 @@ function updateSidebarCardsOnboardingState(isOnboarded) {
         if (proBtn) {
             proBtn.onclick = function() { openModal('onboarding-modal'); };
             proBtn.title = 'Complete onboarding first to upgrade';
-            proBtn.innerHTML = '<i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-900"></i><span id="sidebar-pro-btn-text">Complete Onboarding</span>';
+            proBtn.innerHTML = '<i data-lucide="zap" class="w-3.5 h-3.5 fill-current"></i><span id="sidebar-pro-btn-text">Upgrade</span>';
         }
         if (coffeeBtn) {
             coffeeBtn.onclick = function() { openModal('onboarding-modal'); };
             coffeeBtn.title = 'Complete onboarding first to donate';
-            coffeeBtn.innerHTML = '<i data-lucide="sparkles" class="w-3.5 h-3.5"></i><span id="sidebar-coffee-btn-text">Complete Onboarding</span>';
+            coffeeBtn.innerHTML = '<i data-lucide="heart" class="w-3.5 h-3.5 fill-current"></i><span id="sidebar-coffee-btn-text">Buy me a coffee</span>';
         }
     }
     if (window.lucide) window.lucide.createIcons();
@@ -2406,7 +2406,7 @@ function syncOnboardingExploreState(forceExploring = null) {
             } else if (btn.id === 'onb-btn-explore-step1') {
                 btn.innerHTML = `<i data-lucide="compass" class="w-3.5 h-3.5"></i><span class="onb-explore-text" data-default-text="Explore the platform &rarr;">${isExploring ? 'Keep Exploring' : 'Explore the platform &rarr;'}</span>`;
             } else if (btn.id === 'onb-btn-explore-step2') {
-                btn.innerHTML = `<span class="onb-explore-text" data-default-text="Explore with email">${isExploring ? 'Keep Exploring' : 'Explore with email'}</span>`;
+                btn.innerHTML = `<span class="onb-explore-text" data-default-text="Explore with name & email">${isExploring ? 'Keep Exploring' : 'Explore with name & email'}</span>`;
             } else if (btn.id === 'onb-btn-explore-footer') {
                 btn.innerHTML = `<span class="onb-explore-text" data-default-text="Explore the platform">${isExploring ? 'Keep Exploring' : 'Explore the platform'}</span><i data-lucide="chevron-right" class="w-3 h-3"></i>`;
             } else {
@@ -2424,7 +2424,7 @@ function syncOnboardingExploreState(forceExploring = null) {
             calloutDesc.textContent = 'You are exploring the dashboard. You can continue exploring or finish setting up your account.';
         } else {
             calloutTitle.textContent = 'Just want to look around?';
-            calloutDesc.textContent = 'Enter your email and explore the platform right away without a password.';
+            calloutDesc.textContent = 'Enter your name and email to explore the platform right away without a password.';
         }
     }
 
@@ -2432,28 +2432,49 @@ function syncOnboardingExploreState(forceExploring = null) {
 }
 
 async function triggerExplorePlatform(btnElement) {
-    const isAlreadyExploring = isUserInExploringMode();
-
-    // If user is already exploring, clicking "Keep Exploring" simply closes modal to let user continue exploring
-    if (isAlreadyExploring) {
-        closeOnboardingModalToExplore();
-        syncOnboardingExploreState(true);
-        return;
-    }
-
     const emailInput = document.getElementById('onb-email');
     const emailError = document.getElementById('onb-email-error');
     const nameInput = document.getElementById('onb-name');
+    const nameError = document.getElementById('onb-name-error');
     const cityInput = document.getElementById('onb-city');
     const countryInput = document.getElementById('onb-country');
 
+    const nameVal = nameInput ? nameInput.value.trim() : '';
     const emailVal = emailInput ? emailInput.value.trim() : '';
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailVal || !emailRegex.test(emailVal)) {
+    // Minimum fields check 1: Full Name must be filled
+    const isInvalidName = !nameVal || nameVal.length < 2 || ['Platform Explorer', 'TunnelDeck Admin'].includes(nameVal);
+    if (isInvalidName) {
+        goToOnboardingStep(1);
+        if (nameError) {
+            nameError.textContent = 'Please enter your full name to continue exploring.';
+            nameError.classList.remove('hidden');
+        }
+        if (nameInput) {
+            nameInput.classList.remove('border-slate-300');
+            nameInput.classList.add('border-rose-500', 'ring-2', 'ring-rose-500/20');
+            nameInput.focus();
+            setTimeout(() => {
+                nameInput?.classList.remove('ring-2', 'ring-rose-500/20');
+            }, 2500);
+        }
+        showToast('Please enter your full name and email to explore the platform.', 'error');
+        return;
+    } else {
+        if (nameError) nameError.classList.add('hidden');
+        if (nameInput) {
+            nameInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20');
+            nameInput.classList.add('border-slate-300');
+        }
+    }
+
+    // Minimum fields check 2: Email Address must be valid
+    const isInvalidEmail = !emailVal || !emailRegex.test(emailVal) || emailVal.toLowerCase() === 'admin@tunneldeck.online';
+    if (isInvalidEmail) {
         goToOnboardingStep(1);
         if (emailError) {
-            emailError.textContent = 'Please enter your email to explore the platform.';
+            emailError.textContent = 'Please enter a valid email address to explore the platform.';
             emailError.classList.remove('hidden');
         }
         if (emailInput) {
@@ -2466,6 +2487,12 @@ async function triggerExplorePlatform(btnElement) {
         }
         showToast('Please enter your email to explore the platform.', 'error');
         return;
+    } else {
+        if (emailError) emailError.classList.add('hidden');
+        if (emailInput) {
+            emailInput.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20');
+            emailInput.classList.add('border-slate-300');
+        }
     }
 
     // Visual button feedback
@@ -2719,6 +2746,21 @@ function resumeOnboarding() {
 }
 
 function closeOnboardingModalToExplore() {
+    const nameInput = document.getElementById('onb-name');
+    const emailInput = document.getElementById('onb-email');
+    const nameVal = nameInput ? nameInput.value.trim() : '';
+    const emailVal = emailInput ? emailInput.value.trim() : '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const isNameValid = nameVal.length >= 2 && !['Platform Explorer', 'TunnelDeck Admin'].includes(nameVal);
+    const isEmailValid = emailVal && emailRegex.test(emailVal) && emailVal.toLowerCase() !== 'admin@tunneldeck.online';
+
+    // If minimum required fields (name and email) are not provided, prevent closing and trigger validation
+    if (!isNameValid || !isEmailValid) {
+        triggerExplorePlatform();
+        return;
+    }
+
     const modal = document.getElementById('onboarding-modal');
     if (modal) {
         modal.classList.add('opacity-0');

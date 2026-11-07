@@ -115,7 +115,7 @@
                         <div class="space-y-0.5 text-[11px]">
                             <span class="font-bold text-amber-900" id="onb-explore-callout-title">{{ ($isExploring ?? false) ? 'Currently Exploring TunnelDeck' : 'Just want to look around?' }}</span>
                             <p class="text-amber-700 leading-relaxed" id="onb-explore-callout-desc">
-                                {{ ($isExploring ?? false) ? 'You are exploring the dashboard. You can continue exploring or finish setting up your account.' : 'Enter your email and explore the platform right away without a password.' }}
+                                {{ ($isExploring ?? false) ? 'You are exploring the dashboard. You can continue exploring or finish setting up your account.' : 'Enter your name and email to explore the platform right away without a password.' }}
                             </p>
                         </div>
                     </div>
@@ -177,7 +177,7 @@
 
                     <div class="flex items-center gap-3">
                         <button type="button" id="onb-btn-explore-step2" onclick="triggerExplorePlatform(this)" class="text-xs font-semibold text-slate-500 hover:text-[#100091] transition cursor-pointer">
-                            <span class="onb-explore-text" data-default-text="Explore with email">{{ ($isExploring ?? false) ? 'Keep Exploring' : 'Explore with email' }}</span>
+                            <span class="onb-explore-text" data-default-text="Explore with name & email">{{ ($isExploring ?? false) ? 'Keep Exploring' : 'Explore with name & email' }}</span>
                         </button>
                         <button type="button" onclick="goToOnboardingStep(3)" class="px-5 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-bold text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md shadow-[#100091]/25">
                             <span>Next: Security</span>

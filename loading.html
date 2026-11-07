@@ -283,7 +283,6 @@
         <h1>TunnelDeck Lite</h1>
         <p id="overall-status">Launching local workspace...</p>
       </div>
-      <span class="badge-pill" id="port-badge">Port ...</span>
     </div>
 
     <div class="activity-list">
@@ -296,12 +295,12 @@
         </div>
       </div>
 
-      <!-- Activity 2: PHP Runtime Detection -->
+      <!-- Activity 2: Runtime Detection -->
       <div class="activity-item status-running" id="step-php">
         <div class="activity-icon"><div class="mini-spinner"></div></div>
         <div class="activity-content">
-          <div class="activity-title">PHP Runtime Engine</div>
-          <div class="activity-detail" id="detail-php">Scanning system for PHP 8.2+ runtime...</div>
+          <div class="activity-title">Runtime Engine</div>
+          <div class="activity-detail" id="detail-php">Scanning system for runtime...</div>
         </div>
       </div>
 
@@ -367,9 +366,7 @@
     let hasEncounteredError = false;
     let isDownloading = false;
 
-    if (port) {
-      document.getElementById('port-badge').innerText = `Port :${port}`;
-    } else {
+    if (!port) {
       showError('Configuration Error', 'No local port was specified by launcher. Please run App.exe.');
     }
 
@@ -441,19 +438,19 @@
           if (data.step === 'php') {
             if (data.status === 'done') {
               isDownloading = false;
-              updateStep('step-php', 'done', data.message || 'PHP 8.2+ runtime detected');
+              updateStep('step-php', 'done', data.message || 'Runtime detected');
               updateStep('step-db', 'running', 'Verifying SQLite database and extensions...');
             } else if (data.status === 'downloading') {
               isDownloading = true;
               document.getElementById('overall-status').innerText = 'Setting up runtime environment...';
-              updateStep('step-php', 'running', data.message || 'Installing portable PHP 8.4 runtime...');
+              updateStep('step-php', 'running', data.message || 'Installing portable runtime...');
             } else if (data.status === 'error') {
               isDownloading = false;
               updateStep('step-php', 'error', data.message);
-              showError('PHP Runtime Error', data.message);
+              showError('Runtime Error', data.message);
             }
           } else if (data.step === 'database') {
-            updateStep('step-php', 'done', 'PHP runtime detected');
+            updateStep('step-php', 'done', 'Runtime detected');
             if (data.status === 'done') {
               updateStep('step-db', 'done', data.message || 'SQLite database ready');
               updateStep('step-server', 'running', `Starting server on port ${port}...`);
@@ -462,7 +459,7 @@
               showError('Database Configuration Error', data.message);
             }
           } else if (data.step === 'server') {
-            updateStep('step-php', 'done', 'PHP runtime detected');
+            updateStep('step-php', 'done', 'Runtime detected');
             updateStep('step-db', 'done', 'SQLite database ready');
             if (data.status === 'running') {
               updateStep('step-server', 'running', data.message || `Starting server on port ${port}...`);
@@ -482,7 +479,7 @@
     // Progressive visual progression if status.json isn't readable
     function progressiveFallback() {
       if (pingCount === 2) {
-        updateStep('step-php', 'done', 'PHP runtime verified');
+        updateStep('step-php', 'done', 'Runtime verified');
         updateStep('step-db', 'running', 'Verifying SQLite database and configuration...');
       } else if (pingCount === 5) {
         updateStep('step-db', 'done', 'Database & environment verified');
@@ -532,7 +529,7 @@
         
         // Success: Mark completed and navigate
         isConnected = true;
-        updateStep('step-php', 'done', 'PHP runtime verified');
+        updateStep('step-php', 'done', 'Runtime verified');
         updateStep('step-db', 'done', 'Database & environment verified');
         updateStep('step-server', 'done', 'Server online! Redirecting...');
         document.getElementById('overall-status').innerText = 'Server connected!';
@@ -556,7 +553,7 @@
           const logText = await checkStartupLog();
           updateStep('step-server', 'error', `Could not connect to port ${port}`);
           
-          let tip = `Server did not respond on <b>127.0.0.1:${port}</b> within 40 seconds.<br><br><b>Troubleshooting suggestions:</b><br>• Verify that <b>PHP 8.2+</b> is installed.<br>• Make sure <code>pdo_sqlite</code> and <code>sqlite3</code> are enabled in your <code>php.ini</code>.<br>• Verify antivirus or Windows Firewall is not blocking localhost port ${port}.`;
+          let tip = `Server did not respond on <b>127.0.0.1:${port}</b> within 40 seconds.<br><br><b>Troubleshooting suggestions:</b><br>• Verify that runtime is properly installed.<br>• Make sure database extensions are enabled.<br>• Verify antivirus or Windows Firewall is not blocking localhost port ${port}.`;
           
           showError('Connection Timeout', tip, logText);
           return;

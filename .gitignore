@@ -57,3 +57,7 @@ src/bin/**/*.tmp
 *.log
 *.sqlite-journal
 status.json
+
+# Built Native Installers (Distributed via GitHub Releases)
+win/*.exe
+mac/*.pkg

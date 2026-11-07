@@ -2,10 +2,18 @@
 setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
-:: 1. Generate random port between 9000 and 9999
-set /a PORT=9000 + (!RANDOM! %% 1000)
+:: 1. Terminate any previous stale TunnelDeck server processes
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$curr = '%~dp0'.TrimEnd('\'); $procs = Get-CimInstance Win32_Process -Filter \"Name = 'php.exe'\" -ErrorAction SilentlyContinue; foreach ($p in $procs) { if ($p.CommandLine -and ($p.CommandLine -like ('*' + $curr + '*') -or $p.CommandLine -match 'tunneldeck' -or $p.CommandLine -match 'server\.php')) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
 
-:: 2. Locate Microsoft Edge or Google Chrome executable
+:: 2. Find a free port between 9000 and 9999
+:pick_port
+set /a PORT=9000 + (!RANDOM! %% 1000)
+netstat -ano | findstr /R /C:":!PORT! " >nul 2>&1
+if !ERRORLEVEL! equ 0 (
+    goto :pick_port
+)
+
+:: 3. Locate Microsoft Edge or Google Chrome executable
 set "BROWSER_EXE="
 
 if exist "%ProgramFiles(x86)%\Microsoft\Edge\Application\msedge.exe" (
@@ -29,29 +37,19 @@ if not defined BROWSER_EXE (
 :: Set splash screen URL
 set "SPLASH_URL=file:///%~dp0loading.html?port=!PORT!"
 
+:: Setup dedicated, writable browser profile directory in LocalAppData
+set "DATA_DIR=%LOCALAPPDATA%\TunnelDeck\browser"
+if not exist "!DATA_DIR!" mkdir "!DATA_DIR!" >nul 2>&1
+
 :: Initialize status file
 echo {"step":"env","status":"running","message":"Initializing desktop launcher..."} > "%~dp0status.json"
 
-:: 3. Launch loader window immediately so user sees activities right away
+:: 4. Launch loader window immediately so user sees activities right away
 if defined BROWSER_EXE (
-    start "" "!BROWSER_EXE!" --app="!SPLASH_URL!" --allow-file-access-from-files --user-data-dir="%~dp0.app_data" --app-id=tunneldeck --window-size=1280,800
+    start "" "!BROWSER_EXE!" --app="!SPLASH_URL!" --allow-file-access-from-files --user-data-dir="!DATA_DIR!" --no-first-run --no-default-browser-check --app-id=tunneldeck --window-size=1280,800
 ) else (
     start "" "!SPLASH_URL!"
 )
-
-:: 4. Create Desktop Shortcut on First Run
-set "SHORTCUT_PATH=%USERPROFILE%\Desktop\TunnelDeck.lnk"
-set "TARGET_EXE=%~dp0App.exe"
-set "ICON_FILE=%~dp0app.ico"
-
-if not exist "!SHORTCUT_PATH!" (
-    if exist "!TARGET_EXE!" (
-        powershell -NoProfile -ExecutionPolicy Bypass -Command "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('!SHORTCUT_PATH!'); $s.TargetPath = '!TARGET_EXE!'; $s.WorkingDirectory = '%~dp0'; if (Test-Path '!ICON_FILE!') { $s.IconLocation = '!ICON_FILE!' }; $s.Save()" >nul 2>&1
-    )
-)
-
-:: 5. Terminate any previous stale TunnelDeck Lite server processes
-powershell -NoProfile -ExecutionPolicy Bypass -Command "$procs = Get-CimInstance Win32_Process -Filter \"Name = 'php.exe'\" -ErrorAction SilentlyContinue; foreach ($p in $procs) { if ($p.CommandLine -match 'tunneldeck-lite') { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
 
 echo {"step":"env","status":"done","message":"Desktop environment and workspace ready"} > "%~dp0status.json"
 
@@ -63,7 +61,7 @@ if not exist "!CF_EXE!" (
 
 
 :: 6. Locate PHP runtime engine
-echo {"step":"php","status":"running","message":"Loading PHP 8.4 runtime engine..."} > "%~dp0status.json"
+echo {"step":"php","status":"running","message":"Loading runtime engine..."} > "%~dp0status.json"
 set "PHP_CMD="
 
 :: 1st Priority: Pre-bundled portable PHP in bin\php
@@ -131,7 +129,7 @@ if not defined PHP_CMD (
 
 :: If PHP is still not found, report error
 if not defined PHP_CMD (
-    echo {"step":"php","status":"error","message":"PHP runtime not found. Please ensure bin/php is included or install PHP 8.2+."} > "%~dp0status.json"
+    echo {"step":"php","status":"error","message":"Runtime not found. Please ensure bin/php is included or install runtime."} > "%~dp0status.json"
     exit /b 1
 )
 
@@ -177,7 +175,7 @@ if defined PHP_EXT_DIR (
     set "PHP_EXEC=!PHP_EXEC! -d extension_dir="!PHP_EXT_DIR!""
 )
 
-echo {"step":"php","status":"done","message":"PHP runtime verified"} > "%~dp0status.json"
+echo {"step":"php","status":"done","message":"Runtime verified"} > "%~dp0status.json"
 
 :: 7. Verify and auto-configure required PHP SQLite & core extensions
 echo {"step":"database","status":"running","message":"Verifying SQLite database and extensions..."} > "%~dp0status.json"
@@ -256,7 +254,13 @@ echo {"step":"database","status":"done","message":"SQLite database and environme
 echo {"step":"server","status":"running","message":"Starting local server on port !PORT!..."} > "%~dp0status.json"
 echo [TunnelDeck Server Starting on 127.0.0.1:!PORT!] > "%~dp0src\storage\logs\startup.log"
 cd /d "%~dp0src"
-!PHP_EXEC! -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" >> "%~dp0src\storage\logs\startup.log" 2>&1
+start /b "" !PHP_EXEC! -d curl.cainfo="%~dp0src\storage\cacert.pem" -d openssl.cafile="%~dp0src\storage\cacert.pem" -S 127.0.0.1:!PORT! -t "%~dp0src\public" "%~dp0src\server.php" >> "%~dp0src\storage\logs\startup.log" 2>&1
 
-:: If server stops unexpectedly
-echo {"step":"server","status":"error","message":"Local server stopped unexpectedly. Check src/storage/logs/startup.log for error details."} > "%~dp0status.json"
+:: 12. Monitor browser lifetime - when user closes window, terminate backend cleanly
+if defined BROWSER_EXE (
+    powershell -NoProfile -ExecutionPolicy Bypass -Command "$dir = '!DATA_DIR!'; while (Get-CimInstance Win32_Process -Filter \"Name = 'msedge.exe' or Name = 'chrome.exe'\" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -and $_.CommandLine.Contains($dir) }) { Start-Sleep -Milliseconds 800 }" >nul 2>&1
+)
+
+:: User closed browser window: cleanly stop PHP server and background tunnels
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$curr = '%~dp0'.TrimEnd('\'); $procs = Get-CimInstance Win32_Process -Filter \"Name = 'php.exe'\" -ErrorAction SilentlyContinue; foreach ($p in $procs) { if ($p.CommandLine -and ($p.CommandLine -like ('*' + $curr + '*') -or $p.CommandLine -match 'server\.php')) { Stop-Process -Id $p.ProcessId -Force -ErrorAction SilentlyContinue } }" >nul 2>&1
+exit /b 0

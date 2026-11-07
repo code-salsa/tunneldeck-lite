@@ -170,13 +170,13 @@ class OnboardingController extends Controller
     }
 
     /**
-     * Explore platform option (requires email at least).
+     * Explore platform option (requires at least name and email).
      */
     public function explore(Request $request, TunnelDeckService $tunnelDeck): JsonResponse
     {
         $validated = $request->validate([
             'email' => 'required|email|max:255',
-            'name' => 'nullable|string|max:255',
+            'name' => 'required|string|min:2|max:255',
             'city' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
         ]);
@@ -184,12 +184,27 @@ class OnboardingController extends Controller
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        $nameToSave = !empty($validated['name']) && trim($validated['name']) !== ''
-            ? trim($validated['name'])
-            : ($user->name && $user->name !== 'TunnelDeck Admin' ? $user->name : 'Platform Explorer');
+        $rawName = trim($validated['name']);
+        if (in_array(strtolower($rawName), ['tunneldeck admin', 'platform explorer', 'admin', 'test'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter your full name to continue exploring.',
+                'errors' => ['name' => ['Please enter your full name.']],
+            ], 422);
+        }
 
+        $rawEmail = trim($validated['email']);
+        if (strtolower($rawEmail) === 'admin@tunneldeck.online') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Please enter your own personal or work email address.',
+                'errors' => ['email' => ['Please enter your own email address.']],
+            ], 422);
+        }
+
+        $nameToSave = $rawName;
         $user->name = $nameToSave;
-        $user->email = trim($validated['email']);
+        $user->email = $rawEmail;
         if (!empty($validated['city'])) {
             $user->city = $validated['city'];
         }
