@@ -101,32 +101,6 @@ The macOS installer is a standard flat package (`Tunneldeck.pkg`) that installs 
 
 ---
 
-## 🛠️ Building Installers from Source
-
-Both installer builders are fully included in the repository:
-
-### Building Windows Installer (`win/Tunneldeck.exe`):
-Requires Microsoft .NET Framework 4.5+ (pre-installed on all modern Windows machines).
-```cmd
-cmd /c "win\.builder\build.bat"
-```
-The script compiles `Uninstaller.cs`, stages clean project files into `payload.zip`, and compiles the standalone `win/Tunneldeck.exe`.
-
-### Building macOS Installer (`mac/Tunneldeck.pkg`):
-Requires Node.js on the build machine.
-- **On Windows:**
-  ```cmd
-  mac\build.bat
-  ```
-- **On macOS / Linux:**
-  ```bash
-  chmod +x mac/build.sh
-  ./mac/build.sh
-  ```
-The builder constructs the Apple ICNS icon, creates `Info.plist`, builds the executable launcher script, archives the CPIO payloads, and packages the flat XAR archive into `mac/Tunneldeck.pkg`.
-
----
-
 ## 🚀 Quick Start (Workspace Mode)
 
 If you prefer running directly from this cloned repository without installing:
