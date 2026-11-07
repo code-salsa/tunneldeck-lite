@@ -83,7 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize onboarding input pre-fills and autosave
     initOnboardingPrefills();
-    initOtpInputListeners();
     syncOnboardingExploreState();
 
     // Check localStorage for sidebar preference
@@ -1993,6 +1992,9 @@ let currentOnboardingStep = 1;
 let otpCountdownTimer = null;
 
 function goToOnboardingStep(step) {
+    if (step < 1) step = 1;
+    if (step > 3) step = 3;
+
     const nameInput = document.getElementById('onb-name');
     const emailInput = document.getElementById('onb-email');
     const nameError = document.getElementById('onb-name-error');
@@ -2031,8 +2033,8 @@ function goToOnboardingStep(step) {
 
     currentOnboardingStep = step;
 
-    // Show/hide step panels (1 to 4)
-    for (let i = 1; i <= 4; i++) {
+    // Show/hide step panels (1 to 3)
+    for (let i = 1; i <= 3; i++) {
         const stepEl = document.getElementById(`onboarding-step-${i}`);
         if (stepEl) {
             if (i === step) {
@@ -2074,304 +2076,16 @@ function goToOnboardingStep(step) {
     const bar = document.getElementById('onboarding-progress-bar');
     if (bar) {
         if (step === 1) bar.style.width = '0%';
-        if (step === 2) bar.style.width = '33%';
-        if (step === 3) bar.style.width = '66%';
-        if (step === 4) bar.style.width = '100%';
+        if (step === 2) bar.style.width = '50%';
+        if (step === 3) bar.style.width = '100%';
     }
 
     const counter = document.getElementById('onboarding-step-counter');
     if (counter) {
-        counter.textContent = `Step ${step} of 4`;
-    }
-
-    // When navigating to Step 4, initialize OTP input bindings and focus first digit
-    if (step === 4) {
-        const display = document.getElementById('onb-verify-email-display');
-        const emailVal = emailInput ? emailInput.value.trim() : '';
-        if (display && emailVal) {
-            display.textContent = emailVal;
-        }
-        initOtpInputListeners();
-        setTimeout(() => {
-            const firstDigit = document.getElementById('otp-digit-1');
-            firstDigit?.focus();
-            firstDigit?.select();
-        }, 150);
+        counter.textContent = `Step ${step} of 3`;
     }
 
     if (window.lucide) window.lucide.createIcons();
-}
-
-/**
- * Handles Step 3 password validation and triggers sending the 4-digit verification code.
- */
-async function submitStep3AndSendOtp() {
-    const passwordInput = document.getElementById('onb-password');
-    const passwordConfInput = document.getElementById('onb-password-confirmation');
-    const passwordError = document.getElementById('onb-password-error');
-    const emailInput = document.getElementById('onb-email');
-    const nameInput = document.getElementById('onb-name');
-
-    const passwordVal = passwordInput ? passwordInput.value : '';
-    const passwordConfVal = passwordConfInput ? passwordConfInput.value : '';
-
-    if (passwordVal.length < 6) {
-        if (passwordError) {
-            passwordError.textContent = 'Password must be at least 6 characters.';
-            passwordError.classList.remove('hidden');
-        }
-        passwordInput?.classList.add('border-rose-500');
-        return;
-    }
-
-    if (passwordVal !== passwordConfVal) {
-        if (passwordError) {
-            passwordError.textContent = 'Passwords do not match.';
-            passwordError.classList.remove('hidden');
-        }
-        passwordConfInput?.classList.add('border-rose-500');
-        return;
-    }
-
-    if (passwordError) passwordError.classList.add('hidden');
-    passwordInput?.classList.remove('border-rose-500');
-    passwordConfInput?.classList.remove('border-rose-500');
-
-    const emailVal = emailInput ? emailInput.value.trim() : '';
-    const nameVal = nameInput ? nameInput.value.trim() : '';
-
-    if (!emailVal) {
-        showToast('Please enter your email address in Step 1.', 'error');
-        goToOnboardingStep(1);
-        return;
-    }
-
-    const btn = document.getElementById('onb-to-verify-btn');
-    const spinner = document.getElementById('onb-step3-spinner');
-    const icon = document.getElementById('onb-step3-btn-icon');
-    const text = document.getElementById('onb-step3-btn-text');
-
-    if (btn) btn.disabled = true;
-    if (spinner) spinner.classList.remove('hidden');
-    if (icon) icon.classList.add('hidden');
-    if (text) text.textContent = 'Sending Verification Code...';
-
-    const resetButton = () => {
-        if (btn) btn.disabled = false;
-        if (spinner) spinner.classList.add('hidden');
-        if (icon) icon.classList.remove('hidden');
-        if (text) text.textContent = 'Continue & Send Verification Code';
-    };
-
-    try {
-        const token = getCsrfToken();
-        const res = await fetch('/onboarding/send-otp', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': token,
-            },
-            body: JSON.stringify({
-                email: emailVal,
-                name: nameVal,
-            }),
-        });
-
-        const data = await res.json();
-        resetButton();
-
-        if (res.ok && data.success) {
-            showToast(data.message || `Verification code sent to ${emailVal}`, 'success');
-            goToOnboardingStep(4);
-            startOtpCountdown(45);
-        } else {
-            const msg = data.message || 'Could not send verification code. Please check your email and try again.';
-            if (passwordError) {
-                passwordError.textContent = msg;
-                passwordError.classList.remove('hidden');
-            }
-            showToast(msg, 'error');
-        }
-    } catch (err) {
-        console.error('Send OTP error:', err);
-        resetButton();
-        showToast('Network error while dispatching verification email.', 'error');
-    }
-}
-
-/**
- * Resends the 4-digit verification code.
- */
-async function resendOnboardingOtp(btnElement) {
-    const emailInput = document.getElementById('onb-email');
-    const nameInput = document.getElementById('onb-name');
-    const emailVal = emailInput ? emailInput.value.trim() : '';
-    const nameVal = nameInput ? nameInput.value.trim() : '';
-
-    if (!emailVal) {
-        showToast('Please specify a valid email.', 'error');
-        return;
-    }
-
-    if (btnElement) {
-        btnElement.disabled = true;
-        btnElement.classList.add('opacity-50');
-        btnElement.textContent = 'Sending...';
-    }
-
-    try {
-        const token = getCsrfToken();
-        const res = await fetch('/onboarding/send-otp', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': token,
-            },
-            body: JSON.stringify({
-                email: emailVal,
-                name: nameVal,
-            }),
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            showToast('New verification code sent! Please check your inbox.', 'success');
-            clearOtpBoxes();
-            startOtpCountdown(45);
-        } else {
-            showToast(data.message || 'Failed to resend code.', 'error');
-            if (btnElement) {
-                btnElement.disabled = false;
-                btnElement.classList.remove('opacity-50');
-                btnElement.textContent = 'Resend Code';
-            }
-        }
-    } catch (err) {
-        console.error('Resend OTP error:', err);
-        showToast('Network error while resending verification code.', 'error');
-        if (btnElement) {
-            btnElement.disabled = false;
-            btnElement.classList.remove('opacity-50');
-            btnElement.textContent = 'Resend Code';
-        }
-    }
-}
-
-function clearOtpBoxes() {
-    for (let i = 1; i <= 4; i++) {
-        const box = document.getElementById(`otp-digit-${i}`);
-        if (box) {
-            box.value = '';
-            box.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20');
-        }
-    }
-    const hiddenInput = document.getElementById('onb-otp-code');
-    if (hiddenInput) hiddenInput.value = '';
-    const errEl = document.getElementById('onb-otp-error');
-    if (errEl) errEl.classList.add('hidden');
-    document.getElementById('otp-digit-1')?.focus();
-}
-
-function startOtpCountdown(seconds = 45) {
-    if (otpCountdownTimer) clearInterval(otpCountdownTimer);
-
-    const timerText = document.getElementById('onb-resend-timer-text');
-    const countdownEl = document.getElementById('onb-countdown');
-    const resendBtn = document.getElementById('onb-resend-btn');
-
-    if (!timerText || !countdownEl || !resendBtn) return;
-
-    timerText.classList.remove('hidden');
-    resendBtn.classList.add('hidden');
-    countdownEl.textContent = seconds;
-
-    otpCountdownTimer = setInterval(() => {
-        seconds--;
-        if (seconds <= 0) {
-            clearInterval(otpCountdownTimer);
-            timerText.classList.add('hidden');
-            resendBtn.classList.remove('hidden');
-            resendBtn.disabled = false;
-            resendBtn.classList.remove('opacity-50');
-            resendBtn.textContent = 'Resend Code';
-        } else {
-            countdownEl.textContent = seconds;
-        }
-    }, 1000);
-}
-
-let otpListenersInitialized = false;
-function initOtpInputListeners() {
-    if (otpListenersInitialized) return;
-    const container = document.getElementById('otp-inputs-container');
-    if (!container) return;
-
-    otpListenersInitialized = true;
-    const boxes = [
-        document.getElementById('otp-digit-1'),
-        document.getElementById('otp-digit-2'),
-        document.getElementById('otp-digit-3'),
-        document.getElementById('otp-digit-4'),
-    ].filter(Boolean);
-
-    boxes.forEach((box, index) => {
-        // Typing handler
-        box.addEventListener('input', (e) => {
-            const val = box.value.replace(/\D/g, '');
-            box.value = val ? val[0] : '';
-
-            // Clear errors
-            box.classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20');
-            document.getElementById('onb-otp-error')?.classList.add('hidden');
-
-            if (box.value && index < boxes.length - 1) {
-                boxes[index + 1].focus();
-                boxes[index + 1].select();
-            }
-
-            syncOtpValue(boxes);
-        });
-
-        // Keydown (backspace & navigation)
-        box.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && !box.value && index > 0) {
-                boxes[index - 1].focus();
-                boxes[index - 1].select();
-            }
-        });
-
-        // Paste handler
-        box.addEventListener('paste', (e) => {
-            e.preventDefault();
-            const pasted = (e.clipboardData || window.clipboardData).getData('text').trim();
-            const digits = pasted.replace(/\D/g, '').slice(0, 4);
-            if (!digits) return;
-
-            digits.split('').forEach((d, i) => {
-                if (boxes[i]) {
-                    boxes[i].value = d;
-                    boxes[i].classList.remove('border-rose-500', 'ring-2', 'ring-rose-500/20');
-                }
-            });
-
-            const nextIndex = Math.min(digits.length, boxes.length - 1);
-            boxes[nextIndex].focus();
-            syncOtpValue(boxes);
-
-            if (digits.length === 4) {
-                document.getElementById('onb-submit-btn')?.focus();
-            }
-        });
-    });
-}
-
-function syncOtpValue(boxes) {
-    const code = boxes.map(b => b.value.trim()).join('');
-    const hidden = document.getElementById('onb-otp-code');
-    if (hidden) hidden.value = code;
-    return code;
 }
 
 function isUserInExploringMode() {

@@ -26,7 +26,7 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <span id="onboarding-step-counter" class="text-xs font-bold text-[#100091] bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">Step 1 of 4</span>
+                    <span id="onboarding-step-counter" class="text-xs font-bold text-[#100091] bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">Step 1 of 3</span>
                     <button type="button" onclick="closeOnboardingModalToExplore()" title="Minimize / Continue exploring" class="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer">
                         <i data-lucide="x" class="w-4 h-4"></i>
                     </button>
@@ -61,14 +61,6 @@
                         <span>3</span>
                     </div>
                     <span class="text-[10px] font-bold text-slate-400 mt-1">Security</span>
-                </div>
-
-                <!-- Step 4 Dot -->
-                <div class="relative z-10 flex flex-col items-center">
-                    <div id="step-dot-4" class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold ring-4 ring-white shadow-sm transition-all duration-200">
-                        <span>4</span>
-                    </div>
-                    <span class="text-[10px] font-bold text-slate-400 mt-1">Verify</span>
                 </div>
             </div>
         </div>
@@ -238,63 +230,6 @@
                         <span>Back</span>
                     </button>
 
-                    <button type="button" id="onb-to-verify-btn" onclick="submitStep3AndSendOtp()" class="px-6 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-bold text-xs transition cursor-pointer flex items-center gap-2 shadow-md shadow-[#100091]/25 disabled:opacity-80 disabled:cursor-not-allowed">
-                        <span id="onb-step3-spinner" class="hidden">
-                            <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                        </span>
-                        <span id="onb-step3-btn-text">Continue &amp; Send Verification Code</span>
-                        <i data-lucide="arrow-right" id="onb-step3-btn-icon" class="w-3.5 h-3.5"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- ================= STEP 4: 4-DIGIT EMAIL VERIFICATION ================= -->
-            <div id="onboarding-step-4" class="space-y-4 hidden">
-                <div class="text-center space-y-1.5">
-                    <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-[#100091] shadow-2xs">
-                        <i data-lucide="mail-check" class="w-6 h-6 text-[#100091]"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-slate-900 tracking-tight">Verify Your Email Address</h3>
-                    <p class="text-xs text-slate-500 max-w-sm mx-auto">
-                        We have dispatched a 4-digit verification code to<br>
-                        <span id="onb-verify-email-display" class="font-bold text-[#100091] font-mono text-xs">your email</span>.
-                    </p>
-                </div>
-
-                <!-- 4-Digit OTP Boxes Container -->
-                <div class="space-y-3 pt-2">
-                    <div class="flex items-center justify-center gap-3" id="otp-inputs-container">
-                        <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" id="otp-digit-1" class="otp-box w-12 h-14 text-center text-2xl font-black font-mono bg-white border-2 border-slate-300 rounded-xl focus:border-[#100091] focus:ring-4 focus:ring-[#100091]/15 focus:outline-hidden transition shadow-xs text-slate-900" autocomplete="one-time-code">
-                        <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" id="otp-digit-2" class="otp-box w-12 h-14 text-center text-2xl font-black font-mono bg-white border-2 border-slate-300 rounded-xl focus:border-[#100091] focus:ring-4 focus:ring-[#100091]/15 focus:outline-hidden transition shadow-xs text-slate-900">
-                        <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" id="otp-digit-3" class="otp-box w-12 h-14 text-center text-2xl font-black font-mono bg-white border-2 border-slate-300 rounded-xl focus:border-[#100091] focus:ring-4 focus:ring-[#100091]/15 focus:outline-hidden transition shadow-xs text-slate-900">
-                        <input type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" id="otp-digit-4" class="otp-box w-12 h-14 text-center text-2xl font-black font-mono bg-white border-2 border-slate-300 rounded-xl focus:border-[#100091] focus:ring-4 focus:ring-[#100091]/15 focus:outline-hidden transition shadow-xs text-slate-900">
-                    </div>
-                    <input type="hidden" id="onb-otp-code" name="otp" value="">
-
-                    <p id="onb-otp-error" class="text-xs text-rose-500 font-semibold text-center hidden"></p>
-
-                    <div class="flex items-center justify-between text-xs pt-1 px-4 text-slate-500">
-                        <button type="button" onclick="goToOnboardingStep(1)" class="hover:text-[#100091] transition font-medium cursor-pointer">
-                            Wrong email? <span class="underline">Change</span>
-                        </button>
-                        <div>
-                            <span id="onb-resend-timer-text" class="text-slate-400">Resend in <span id="onb-countdown" class="font-bold">45</span>s</span>
-                            <button type="button" id="onb-resend-btn" onclick="resendOnboardingOtp(this)" class="hidden font-bold text-[#100091] hover:underline cursor-pointer">
-                                Resend Code
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="pt-4 flex items-center justify-between border-t border-slate-100">
-                    <button type="button" onclick="goToOnboardingStep(3)" class="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold text-xs transition cursor-pointer flex items-center gap-1.5">
-                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
-                        <span>Back: Security</span>
-                    </button>
-
                     <button type="submit" id="onb-submit-btn" class="px-6 py-2.5 rounded-xl bg-[#100091] hover:bg-[#0b0068] text-white font-bold text-xs transition cursor-pointer flex items-center gap-2 shadow-md shadow-[#100091]/25 disabled:opacity-80 disabled:cursor-not-allowed">
                         <span id="onb-submit-spinner" class="hidden">
                             <svg class="animate-spin -ml-1 mr-1.5 h-3.5 w-3.5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -302,7 +237,7 @@
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                         </span>
-                        <span id="onb-submit-text">Verify &amp; Launch</span>
+                        <span id="onb-submit-text">Complete Setup &amp; Launch</span>
                         <i data-lucide="sparkles" id="onb-submit-icon" class="w-3.5 h-3.5"></i>
                     </button>
                 </div>

@@ -78,21 +78,7 @@ class OnboardingController extends Controller
             'city' => 'nullable|string|max:100',
             'country' => 'nullable|string|max:100',
             'password' => 'required|string|min:6|confirmed',
-            'otp' => 'nullable|string|size:4',
         ]);
-
-        // If a 4-digit OTP was provided, verify it with the licensing server
-        if ($request->filled('otp')) {
-            $verifyResp = $tunnelDeck->verifyOtp($validated['email'], $validated['otp']);
-            if ($verifyResp && ($verifyResp->failed() || !$verifyResp->json('success'))) {
-                $errorMsg = $verifyResp->json('message') ?: 'Invalid or expired 4-digit verification code. Please request a new code.';
-                return response()->json([
-                    'success' => false,
-                    'message' => $errorMsg,
-                    'errors' => ['otp' => [$errorMsg]],
-                ], 422);
-            }
-        }
 
         /** @var \App\Models\User $user */
         $user = Auth::user();

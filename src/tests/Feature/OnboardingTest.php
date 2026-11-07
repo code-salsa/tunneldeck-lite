@@ -399,45 +399,31 @@ class OnboardingTest extends TestCase
     }
 
     /**
-     * User cannot complete onboarding when invalid 4-digit OTP is provided.
+     * User cannot complete onboarding when passwords do not match.
      */
-    public function test_user_cannot_complete_onboarding_with_invalid_otp(): void
+    public function test_user_cannot_complete_onboarding_with_mismatched_password(): void
     {
-        Http::fake([
-            'licensing.tunneldeck.online/api/v1/auth/verify-otp' => Http::response([
-                'success' => false,
-                'message' => 'Invalid or expired 4-digit verification code.',
-            ], 422),
-        ]);
-
         $user = User::where('email', 'admin@tunneldeck.online')->first();
 
         $response = $this->actingAs($user)->postJson('/onboarding/complete', [
             'name' => 'Aarav Sharma',
             'email' => 'aarav@example.com',
             'password' => 'SecurePass123!',
-            'password_confirmation' => 'SecurePass123!',
-            'otp' => '9999',
+            'password_confirmation' => 'DifferentPassword456!',
         ]);
 
         $response->assertStatus(422)
-            ->assertJson([
-                'success' => false,
-            ]);
+            ->assertJsonValidationErrors(['password']);
 
         $this->assertFalse((bool) $user->fresh()->is_onboarded);
     }
 
     /**
-     * User can complete onboarding when valid 4-digit OTP is provided.
+     * User can complete onboarding directly without any OTP verification.
      */
-    public function test_user_can_complete_onboarding_with_valid_otp(): void
+    public function test_user_can_complete_onboarding_directly_without_otp(): void
     {
         Http::fake([
-            'licensing.tunneldeck.online/api/v1/auth/verify-otp' => Http::response([
-                'success' => true,
-                'message' => 'Email verified successfully!',
-            ], 200),
             'licensing.tunneldeck.online/*' => Http::response([
                 'success' => true,
                 'message' => 'Success',
@@ -451,7 +437,6 @@ class OnboardingTest extends TestCase
             'email' => 'aarav.verified@example.com',
             'password' => 'SecurePass123!',
             'password_confirmation' => 'SecurePass123!',
-            'otp' => '1234',
         ]);
 
         $response->assertStatus(200)
